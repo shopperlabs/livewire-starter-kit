@@ -1,4 +1,6 @@
-# Shopper Livewire Starter Kit
+<p align="center"><img src="/art/socialcard.png" alt="Logo Shopper Starter kit"></p>
+
+# Livewire Starter Kit
 
 A complete, production-ready storefront for [Shopper](https://laravelshopper.dev), built with **Livewire 3**, **Flux UI** and **Tailwind CSS v4**.
 
