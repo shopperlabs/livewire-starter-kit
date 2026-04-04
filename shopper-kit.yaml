@@ -14,7 +14,7 @@ dependencies:
   - laravel/fortify: "^1.25"
   - shopper/stripe: "^2.7"
 
-dev_dependencies: []
+dev_dependencies:
 
 export_paths:
   - app/Actions
