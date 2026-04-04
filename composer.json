@@ -1,0 +1,25 @@
+{
+  "name": "shopper/livewire-starter-kit",
+  "description": "A Livewire-powered storefront starter kit for Shopper, featuring product browsing, cart, checkout, Stripe payment and order management.",
+  "keywords": [
+    "shopper",
+    "livewire",
+    "e-commerce",
+    "storefront",
+    "starter-kit",
+    "laravel"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Arthur Monney",
+      "email": "arthur@shopperlabs.co"
+    }
+  ],
+  "extra": {
+    "shopper": {
+      "name": "Livewire Starter Kit",
+      "description": "A Livewire-powered storefront with Flux UI, multi-currency zones, cart, checkout, Stripe payment and order management."
+    }
+  }
+}
