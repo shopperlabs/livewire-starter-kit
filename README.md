@@ -1,6 +1,16 @@
-<p align="center"><img src="/art/socialcard.png" alt="Logo Shopper Starter kit"></p>
+<p>
+  <a href="https://github.com/shopperlabs/shopper/blob/2.x/CONTRIBUTING.md">
+    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
+  </a>
+  <a href="https://laravelshopper.dev/discord">
+    <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
+  </a>
+  <a href="https://twitter.com/intent/follow?screen_name=laravelshopper">
+    <img src="https://img.shields.io/twitter/follow/laravelshopper.svg?label=Follow%20@laravelshopper" alt="Follow @laravelshopper" />
+  </a>
+</p>
 
-# Livewire Starter Kit
+# Shopper Livewire Starter Kit
 
 A complete, production-ready storefront for [Shopper](https://laravelshopper.dev), built with **Livewire 3**, **Flux UI** and **Tailwind CSS v4**.
 
