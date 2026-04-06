@@ -1,5 +1,5 @@
 {
-  "name": "shopper/livewire-starter-kit",
+  "name": "shopperlabs/livewire-starter-kit",
   "description": "A Livewire-powered storefront starter kit for Shopper, featuring product browsing, cart, checkout, Stripe payment and order management.",
   "keywords": [
     "shopper",
