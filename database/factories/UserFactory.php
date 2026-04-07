@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 use Shopper\Core\Enum\GenderType;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
+ * @extends Factory<\App\Models\User>
  */
 class UserFactory extends Factory
 {

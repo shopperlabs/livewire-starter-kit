@@ -67,7 +67,7 @@ A complete, production-ready storefront for [Shopper](https://laravelshopper.dev
 ### On a new Shopper project
 
 ```bash
-php artisan shopper:kit:install shopper/livewire-starter-kit
+php artisan shopper:kit:install shopperlabs/livewire-starter-kit
 ```
 
 ### On an existing project
@@ -76,7 +76,7 @@ We recommend creating a new git branch before installing:
 
 ```bash
 git checkout -b storefront
-php artisan shopper:kit:install shopper/livewire-starter-kit
+php artisan shopper:kit:install shopperlabs/livewire-starter-kit
 ```
 
 The installer will:

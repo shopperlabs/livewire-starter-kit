@@ -10,11 +10,12 @@ laravel: "^11.48|^12.0"
 dependencies:
   - livewire/livewire: "^3.7"
   - livewire/flux: "^2.0"
-  - livewire/volt: "^1.7"
-  - laravel/fortify: "^1.25"
+  - livewire/volt: "^1.10"
+  - laravel/fortify: "^1.36"
   - shopper/stripe: "^2.7"
 
 dev_dependencies:
+  - laravel/boost: "^2.4"
 
 export_paths:
   - app/Actions
@@ -43,4 +44,3 @@ export_paths:
 post_install:
   - php artisan migrate
   - php artisan storage:link
-  - npm install && npm run build
