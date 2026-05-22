@@ -98,7 +98,7 @@ class ProductShow extends Component
         }
 
         try {
-            resolve(AddToCart::class)->handle($this->product, $this->selectedVariant);
+            resolve(AddToCart::class)->handle($this->product, $this->selectedVariant, $this->quantity);
             $this->dispatch('cart-updated');
             $this->dispatch('notify', type: 'success', message: __('Product added to cart!'));
         } catch (InsufficientStockException) {

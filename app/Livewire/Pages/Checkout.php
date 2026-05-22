@@ -13,11 +13,13 @@ use App\CheckoutSession;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Shopper\Cart\CartManager;
 use Shopper\Cart\CartSessionManager;
 use Shopper\Cart\Models\Cart as CartModel;
+use Shopper\Core\Enum\OrderStatus;
 use Shopper\Cart\Pipelines\CartPipelineContext;
 use Shopper\Core\Enum\AddressType;
 use Shopper\Core\Models\Address;
@@ -26,6 +28,7 @@ use Throwable;
 
 class Checkout extends Component
 {
+    #[Locked]
     public int $step = 1;
 
     public ?int $selectedAddressId = null;
@@ -55,6 +58,7 @@ class Checkout extends Component
     public string $shippingPhone = '';
 
     /** @var array<int, array<string, mixed>> */
+    #[Locked]
     public array $deliveryOptions = [];
 
     public string|int|null $selectedDeliveryOption = null;
@@ -62,6 +66,7 @@ class Checkout extends Component
     public ?int $paymentMethodId = null;
 
     /** @var array<int, array<string, mixed>> */
+    #[Locked]
     public array $paymentOptions = [];
 
     public function mount(): void
@@ -177,9 +182,7 @@ class Checkout extends Component
         session()->push(CheckoutSession::SHIPPING_OPTION, [
             'id' => $selected['service_code'],
             'name' => $selected['service_name'],
-            'price' => is_no_division_currency($selected['currency'])
-                ? $selected['amount']
-                : $selected['amount'] / 100,
+            'price' => (int) $selected['amount'],
             'service_code' => $selected['service_code'],
             'carrier_code' => $selected['carrier_code'],
             'currency' => $selected['currency'],
@@ -213,14 +216,15 @@ class Checkout extends Component
             $service = resolve(PaymentProcessingService::class);
             $result = $service->initiate($order);
 
-            session()->forget(CheckoutSession::KEY);
-
             if (! $result->success) {
-                session()->flash('error', $result->message ?? __('Payment initiation failed.'));
-                $this->redirect(route('shop.checkout.success', ['order' => $order->id]), navigate: true);
+                $order->update(['status' => OrderStatus::Cancelled]);
+                $this->dispatch('notify', type: 'error', message: $result->message ?? __('Payment initiation failed.'));
 
                 return;
             }
+
+            session()->forget(CheckoutSession::KEY);
+            resolve(CartSessionManager::class)->forget();
 
             if ($result->clientSecret) {
                 session()->put('stripe_payment', [

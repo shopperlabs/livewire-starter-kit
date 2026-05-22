@@ -20,7 +20,7 @@ class CategoryIndex extends Component
             ->scopes('enabled')
             ->whereNull('parent_id')
             ->with('media')
-            ->withCount(['products' => fn ($query) => $query->whereNull('sh_products.deleted_at')])
+            ->withCount(['products' => fn ($query) => $query->whereNull(shopper_table('products').'.deleted_at')])
             ->orderBy('position')
             ->get());
     }

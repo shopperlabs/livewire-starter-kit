@@ -8,10 +8,10 @@
 
 <div>
     <x-container class="py-8 sm:py-12">
-        <nav class="flex items-center gap-2 text-sm text-zinc-500 mb-8">
-            <x-link :href="route('home')" class="hover:text-zinc-900 dark:hover:text-white transition">{{ __('Home') }}</x-link>
+        <nav class="mb-8 flex items-center gap-2 text-sm text-zinc-500">
+            <x-link :href="route('home')" class="transition hover:text-zinc-900 dark:hover:text-white">{{ __('Home') }}</x-link>
             <span>/</span>
-            <x-link :href="route('shop.index')" class="hover:text-zinc-900 dark:hover:text-white transition">{{ __('Shop') }}</x-link>
+            <x-link :href="route('shop.index')" class="transition hover:text-zinc-900 dark:hover:text-white">{{ __('Shop') }}</x-link>
             <span>/</span>
             <span class="text-zinc-900 dark:text-white">{{ $product->name }}</span>
         </nav>
@@ -28,7 +28,7 @@
                             <button
                                 type="button"
                                 @click="activeImage = '{{ $thumbnail }}'"
-                                class="aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 ring-2 ring-transparent focus:ring-zinc-900 dark:focus:ring-white"
+                                class="aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-2 ring-transparent focus:ring-zinc-900 dark:bg-zinc-800 dark:focus:ring-white"
                             >
                                 <img src="{{ $thumbnail }}" alt="" class="size-full object-cover object-center" />
                             </button>
@@ -37,7 +37,7 @@
                             <button
                                 type="button"
                                 @click="activeImage = '{{ $image->getUrl() }}'"
-                                class="aspect-square overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 ring-2 ring-transparent focus:ring-zinc-900 dark:focus:ring-white"
+                                class="aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-2 ring-transparent focus:ring-zinc-900 dark:bg-zinc-800 dark:focus:ring-white"
                             >
                                 <img src="{{ $image->getUrl() }}" alt="" class="size-full object-cover object-center" />
                             </button>
@@ -47,7 +47,7 @@
             </div>
 
             <div class="mt-8 lg:mt-0">
-                <h1 class="text-3xl font-bold text-zinc-900 dark:text-white font-heading">{{ $product->name }}</h1>
+                <h1 class="font-heading text-3xl font-bold text-zinc-900 dark:text-white">{{ $product->name }}</h1>
 
                 @php
                     $displayPrice = $selectedVariant?->getFormattedPrice() ?? $product->getFormattedPrice();
@@ -74,9 +74,9 @@
                                                 wire:click="selectOption({{ $option['id'] }}, {{ $value['id'] }})"
                                                 @class([
                                                     'size-8 rounded-full border-2 transition',
-                                                    'border-zinc-900 dark:border-white ring-2 ring-zinc-900 dark:ring-white ring-offset-2' => $isSelected,
-                                                    'border-zinc-300 dark:border-zinc-600 hover:border-zinc-500' => !$isSelected && $isAvailable,
-                                                    'border-zinc-200 dark:border-zinc-700 opacity-30 cursor-not-allowed' => !$isAvailable,
+                                                    'border-zinc-900 ring-2 ring-zinc-900 ring-offset-2 dark:border-white dark:ring-white' => $isSelected,
+                                                    'border-zinc-300 hover:border-zinc-500 dark:border-zinc-600' => !$isSelected && $isAvailable,
+                                                    'cursor-not-allowed border-zinc-200 opacity-30 dark:border-zinc-700' => !$isAvailable,
                                                 ])
                                                 style="background-color: {{ $value['key'] }}"
                                                 @disabled(!$isAvailable)
@@ -92,7 +92,7 @@
                                                     'rounded-lg border px-4 py-2 text-sm font-medium transition',
                                                     'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900' => $isSelected,
                                                     'border-zinc-300 text-zinc-900 hover:border-zinc-500 dark:border-zinc-600 dark:text-white dark:hover:border-zinc-400' => !$isSelected && $isAvailable,
-                                                    'border-zinc-200 text-zinc-300 dark:border-zinc-700 dark:text-zinc-600 cursor-not-allowed' => !$isAvailable,
+                                                    'cursor-not-allowed border-zinc-200 text-zinc-300 dark:border-zinc-700 dark:text-zinc-600' => !$isAvailable,
                                                 ])
                                                 @disabled(!$isAvailable)
                                             >
@@ -111,16 +111,16 @@
                         <button
                             type="button"
                             wire:click="$set('quantity', Math.max(1, $wire.quantity - 1))"
-                            class="px-3 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition"
+                            class="px-3 py-2 text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white"
                             @disabled($quantity <= 1)
                         >
                             <x-flux::icon.minus variant="micro" class="size-4" />
                         </button>
-                        <span class="min-w-[2rem] text-center text-sm font-medium text-zinc-900 dark:text-white">{{ $quantity }}</span>
+                        <span class="min-w-8 text-center text-sm font-medium text-zinc-900 dark:text-white">{{ $quantity }}</span>
                         <button
                             type="button"
                             wire:click="$set('quantity', $wire.quantity + 1)"
-                            class="px-3 py-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition"
+                            class="px-3 py-2 text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white"
                         >
                             <x-flux::icon.plus variant="micro" class="size-4" />
                         </button>
@@ -133,9 +133,9 @@
                 </div>
 
                 @if($product->description)
-                    <div class="mt-8 border-t border-zinc-200 dark:border-zinc-700 pt-8">
+                    <div class="mt-8 border-t border-zinc-200 pt-8 dark:border-zinc-700">
                         <h3 class="text-sm font-medium text-zinc-900 dark:text-white">{{ __('Description') }}</h3>
-                        <div class="mt-3 prose prose-sm prose-zinc dark:prose-invert max-w-none">
+                        <div class="prose prose-sm mt-3 max-w-none prose-zinc dark:prose-invert">
                             {!! str($product->description)->sanitizeHtml() !!}
                         </div>
                     </div>
@@ -144,8 +144,8 @@
         </div>
 
         @if($product->relatedProducts->isNotEmpty())
-            <section class="mt-16 border-t border-zinc-200 dark:border-zinc-700 pt-12">
-                <h2 class="text-2xl font-bold text-zinc-900 dark:text-white font-heading">{{ __('Related Products') }}</h2>
+            <section class="mt-16 border-t border-zinc-200 pt-12 dark:border-zinc-700">
+                <h2 class="font-heading text-2xl font-bold text-zinc-900 dark:text-white">{{ __('Related Products') }}</h2>
                 <div class="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-6">
                     @foreach($product->relatedProducts as $relatedProduct)
                         <x-product-card :product="$relatedProduct" />

@@ -52,8 +52,8 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
         @if ($order->shippingAddress)
             <div>
                 <x-card>
-                    <h3 class="text-sm font-semibold text-zinc-900 dark:text-white font-heading">{{ __('Shipping address') }}</h3>
-                    <address class="mt-3 text-sm not-italic text-zinc-500">
+                    <h3 class="font-heading text-sm font-semibold text-zinc-900 dark:text-white">{{ __('Shipping address') }}</h3>
+                    <address class="mt-3 text-sm text-zinc-500 not-italic">
                         <p class="font-medium text-zinc-900 dark:text-white">{{ $order->shippingAddress->full_name }}</p>
                         <p>{{ $order->shippingAddress->street_address }}</p>
                         @if ($order->shippingAddress->street_address_plus)
@@ -70,7 +70,7 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
 
         <div class="lg:col-span-2">
             <x-card>
-                <h3 class="text-sm font-semibold text-zinc-900 dark:text-white font-heading">{{ __('Order summary') }}</h3>
+                <h3 class="font-heading text-sm font-semibold text-zinc-900 dark:text-white">{{ __('Order summary') }}</h3>
                 @php
                     $shippingPrice = $order->shippingOption?->price ?? 0;
                     $itemsTotal = $order->price_amount - ($order->tax_amount ?? 0) - $shippingPrice;
@@ -99,7 +99,7 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
                             <dd class="text-zinc-900 dark:text-white">{{ shopper_money_format($order->tax_amount, $order->currency_code) }}</dd>
                         </div>
                     @endif
-                    <div class="flex justify-between border-t border-zinc-200 dark:border-zinc-700 pt-2">
+                    <div class="flex justify-between border-t border-zinc-200 pt-2 dark:border-zinc-700">
                         <dt class="font-semibold text-zinc-900 dark:text-white">{{ __('Total') }}</dt>
                         <dd class="font-semibold text-zinc-900 dark:text-white">{{ shopper_money_format($order->price_amount, $order->currency_code) }}</dd>
                     </div>

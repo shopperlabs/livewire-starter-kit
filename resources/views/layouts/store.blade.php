@@ -7,7 +7,7 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="flex flex-col font-sans antialiased min-h-screen bg-white dark:bg-zinc-900">
+    <body class="flex min-h-screen flex-col bg-white font-sans antialiased dark:bg-zinc-900">
         <livewire:store-header />
 
         <main class="flex-1">

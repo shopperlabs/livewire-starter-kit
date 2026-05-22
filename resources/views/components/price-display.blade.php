@@ -24,7 +24,7 @@
         </p>
 
         @if ($price->percentage && $price->percentage > 0)
-            <p class="flex items-center gap-1.5 mt-0.5 sm:mt-0 sm:inline-flex">
+            <p class="mt-0.5 flex items-center gap-1.5 sm:mt-0 sm:inline-flex">
                 <span class="sr-only">{{ __('Original :') }}</span>
                 <span class="text-zinc-400 line-through">{{ $price->compare->formatted }}</span>
                 <span class="inline-flex items-center rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">

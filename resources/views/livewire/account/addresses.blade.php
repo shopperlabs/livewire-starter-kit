@@ -12,7 +12,7 @@
         @if ($this->addresses->isNotEmpty())
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($this->addresses as $address)
-                    <x-address.card :$address />
+                    <x-address.card :$address wire:key="address-{{ $address->id }}" />
                 @endforeach
             </div>
         @else

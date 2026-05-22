@@ -16,7 +16,7 @@
 @endphp
 
 <div {{ $attributes->twMerge(['class' => 'flex gap-4']) }}>
-    <div class="size-24 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 ring-1 ring-zinc-200 dark:ring-zinc-700">
+    <div class="size-24 shrink-0 overflow-hidden rounded-lg bg-zinc-100 ring-1 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700">
         <img
             src="{{ $image ?: $fallback }}"
             alt="{{ $item->name }}"
@@ -24,13 +24,13 @@
             loading="lazy"
         />
     </div>
-    <div class="flex-1 min-w-0">
+    <div class="min-w-0 flex-1">
         @if ($product)
-            <x-link :href="route('shop.product', $product)" class="text-sm font-medium text-zinc-900 dark:text-white hover:underline font-heading line-clamp-2">
+            <x-link :href="route('shop.product', $product)" class="line-clamp-2 font-heading text-sm font-medium text-zinc-900 hover:underline dark:text-white">
                 {{ $item->name }}
             </x-link>
         @else
-            <p class="text-sm font-medium text-zinc-900 dark:text-white font-heading line-clamp-2">{{ $item->name }}</p>
+            <p class="line-clamp-2 font-heading text-sm font-medium text-zinc-900 dark:text-white">{{ $item->name }}</p>
         @endif
 
         @if ($item->sku)
@@ -40,7 +40,7 @@
             {{ __('Qty: :qty', ['qty' => $item->quantity]) }} &middot; {{ shopper_money_format($item->unit_price_amount, $currencyCode) }}
         </p>
     </div>
-    <p class="text-sm font-medium text-zinc-900 dark:text-white shrink-0">
+    <p class="shrink-0 text-sm font-medium text-zinc-900 dark:text-white">
         {{ shopper_money_format($item->unit_price_amount * $item->quantity, $currencyCode) }}
     </p>
 </div>

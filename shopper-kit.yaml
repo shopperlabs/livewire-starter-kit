@@ -1,21 +1,21 @@
-name: "Shopper Livewire Starter Kit"
-description: "A Livewire-powered storefront with reactive components for Shopper."
-version: "1.0.0"
-author: "shopperlabs"
-url: "https://github.com/shopperlabs/livewire-starter-kit"
-shopper: "^2.7"
-php: "^8.4"
-laravel: "^11.48|^12.0"
+name: 'Shopper Livewire Starter Kit'
+description: 'A Livewire-powered storefront with reactive components for Shopper.'
+version: 1.0.0
+author: shopperlabs
+url: 'https://github.com/shopperlabs/livewire-starter-kit'
+shopper: ^2.9
+php: ^8.4
+laravel: ^11.48|^12.0|^13.0
 
 dependencies:
-  - livewire/livewire: "^3.7"
-  - livewire/flux: "^2.0"
-  - livewire/volt: "^1.10"
-  - laravel/fortify: "^1.36"
-  - shopper/stripe: "^2.7"
+  livewire/livewire: ^3.7
+  livewire/flux: ^2.9.0
+  livewire/volt: ^1.7.0
+  laravel/fortify: ^1.36
+  shopper/stripe: ^2.9
 
 dev_dependencies:
-  - laravel/boost: "^2.4"
+  laravel/boost: ^2.4
 
 export_paths:
   - app/Actions
@@ -33,8 +33,8 @@ export_paths:
   - config/fortify.php
   - config/livewire.php
   - config/shopper/models.php
-  - database/factories
-  - database/migrations
+  - database/factories/UserFactory.php
+  - database/migrations/2025_09_02_075243_add_two_factor_columns_to_users_table.php
   - resources/views
   - resources/css
   - routes/web.php

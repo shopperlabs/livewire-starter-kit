@@ -1,6 +1,6 @@
 <div>
     <x-container class="py-8 sm:py-12">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <flux:heading size="xl">{{ __('Shop') }}</flux:heading>
                 <flux:text class="mt-1">{{ __('Browse our entire collection') }}</flux:text>

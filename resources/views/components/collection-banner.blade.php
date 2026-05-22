@@ -26,13 +26,13 @@
     </div>
 
     <div class="absolute inset-x-0 bottom-0 p-6">
-        <h3 class="text-lg font-semibold text-white font-heading">{{ $collection->name }}</h3>
+        <h3 class="font-heading text-lg font-semibold text-white">{{ $collection->name }}</h3>
 
         @if ($collection->description)
-            <p class="mt-0.5 text-sm text-zinc-200 line-clamp-2">{{ strip_tags($collection->description) }}</p>
+            <p class="mt-0.5 line-clamp-2 text-sm text-zinc-200">{{ strip_tags($collection->description) }}</p>
         @endif
 
-        <span class="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-white group-hover:gap-2.5 transition-all">
+        <span class="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-white transition-all group-hover:gap-2.5">
             {{ __('Shop now') }}
             <x-flux::icon.arrow-right variant="micro" class="size-4" aria-hidden="true" />
         </span>

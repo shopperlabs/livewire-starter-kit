@@ -12,7 +12,7 @@
     @endif
 
     <div class="flex flex-col gap-4">
-        <h4 class="text-sm font-medium text-zinc-900 dark:text-white font-heading">
+        <h4 class="font-heading text-sm font-medium text-zinc-900 dark:text-white">
             {{ $address->first_name }} {{ $address->last_name }}
         </h4>
         <p class="flex flex-col text-sm text-zinc-500">

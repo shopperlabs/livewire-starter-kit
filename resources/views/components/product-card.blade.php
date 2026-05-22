@@ -26,7 +26,7 @@
         @endif
     </div>
 
-    <h3 class="mt-3 text-sm text-zinc-700 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition">
+    <h3 class="mt-3 text-sm text-zinc-700 transition group-hover:text-zinc-900 dark:text-zinc-300 dark:group-hover:text-white">
         <x-link :href="route('shop.product', $product)">
             <span class="absolute inset-0"></span>
             {{ $product->name }}

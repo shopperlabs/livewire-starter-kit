@@ -14,19 +14,19 @@ new class extends Component {
 }; ?>
 
 <div>
-    <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8 py-16 text-center">
+    <div class="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <div class="flex justify-center">
             <div class="flex size-16 items-center justify-center rounded-full bg-green-100">
                 <x-flux::icon.check variant="outline" class="size-8 text-green-600" />
             </div>
         </div>
 
-        <h1 class="mt-6 text-3xl font-bold text-zinc-900 dark:text-white font-heading">{{ __('Order Confirmed!') }}</h1>
+        <h1 class="mt-6 font-heading text-3xl font-bold text-zinc-900 dark:text-white">{{ __('Order Confirmed!') }}</h1>
         <p class="mt-2 text-zinc-500">
             {{ __('Thank you for your purchase. Your order number is :number.', ['number' => $order->number]) }}
         </p>
 
-        <div class="mt-8 rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 p-6 text-left">
+        <div class="mt-8 rounded-2xl bg-zinc-50 p-6 text-left dark:bg-zinc-800/50">
             <h2 class="text-sm font-semibold text-zinc-900 dark:text-white">{{ __('Order Details') }}</h2>
             <dl class="mt-4 space-y-3">
                 <div class="flex justify-between">
@@ -44,7 +44,7 @@ new class extends Component {
             </dl>
         </div>
 
-        <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div class="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
             @auth
                 <flux:button variant="primary" :href="route('account.orders')" wire:navigate>
                     {{ __('View My Orders') }}

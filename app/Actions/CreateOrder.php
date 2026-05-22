@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Actions;
 
 use App\CheckoutSession;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Shopper\Cart\Actions\CreateOrderFromCartAction;
-use Shopper\Cart\CartSessionManager;
 use Shopper\Core\Models\Order;
 
 final class CreateOrder
@@ -26,23 +26,26 @@ final class CreateOrder
 
         $cart = cartSession();
 
-        $order = DB::transaction(function () use ($cart, $checkout): Order {
-            $order = resolve(CreateOrderFromCartAction::class)->execute($cart);
+        $lock = Cache::lock('checkout.create-order.'.$cart->id, 30);
 
-            $shippingPrice = (int) data_get($checkout, 'shipping_option.0.price', 0);
-            $multiplier = ($shippingPrice > 0 && ! is_no_division_currency($order->currency_code)) ? 100 : 1;
+        abort_unless($lock->get(), 409, __('A checkout is already in progress.'));
 
-            $order->update([
-                'shipping_option_id' => data_get($checkout, 'shipping_option.0.id'),
-                'payment_method_id' => data_get($checkout, 'payment.0.id'),
-                'price_amount' => $order->price_amount + ($shippingPrice * $multiplier),
-            ]);
+        try {
+            return DB::transaction(function () use ($cart, $checkout): Order {
+                $order = resolve(CreateOrderFromCartAction::class)->execute($cart);
 
-            return $order;
-        });
+                $shippingPrice = (int) data_get($checkout, 'shipping_option.0.price', 0);
 
-        resolve(CartSessionManager::class)->forget();
+                $order->update([
+                    'shipping_option_id' => data_get($checkout, 'shipping_option.0.id'),
+                    'payment_method_id' => data_get($checkout, 'payment.0.id'),
+                    'price_amount' => $order->price_amount + $shippingPrice,
+                ]);
 
-        return $order;
+                return $order;
+            });
+        } finally {
+            $lock->release();
+        }
     }
 }
