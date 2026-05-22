@@ -1,7 +1,7 @@
 <div>
     <x-container class="py-8 sm:py-12">
         <div class="text-center">
-            <h1 class="text-3xl font-bold text-zinc-900 dark:text-white font-heading">{{ __('Categories') }}</h1>
+            <h1 class="font-heading text-3xl font-bold text-zinc-900 dark:text-white">{{ __('Categories') }}</h1>
             <p class="mt-2 text-sm text-zinc-500">{{ __('Browse products by category') }}</p>
         </div>
 
@@ -23,14 +23,14 @@
                         wire:navigate
                         class="group relative overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-800"
                     >
-                        <div class="aspect-[4/3]">
+                        <div class="aspect-4/3">
                             <img
                                 src="{{ $image ?: $fallback }}"
                                 alt="{{ $category->name }}"
                                 class="size-full object-cover object-center transition duration-500 group-hover:scale-105"
                                 loading="lazy"
                             />
-                            <div class="absolute inset-0 bg-gradient-to-t from-zinc-900/70 to-transparent"></div>
+                            <div class="absolute inset-0 bg-linear-to-t from-zinc-900/70 to-transparent"></div>
                         </div>
                         <div class="absolute inset-x-0 bottom-0 p-4">
                             <h3 class="text-base font-semibold text-white">{{ $category->name }}</h3>

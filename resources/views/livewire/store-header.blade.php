@@ -1,14 +1,14 @@
 <header
     x-data="{ mobileOpen: false }"
-    class="sticky top-0 z-30 bg-white/80 border-b border-zinc-200 backdrop-blur-xl dark:bg-zinc-900 dark:border-white/10"
+    class="sticky top-0 z-30 border-b border-zinc-200 bg-white/80 backdrop-blur-xl dark:border-white/10 dark:bg-zinc-900"
 >
     <x-announcement-bar :message="__('Summer Sale For All Swim Suits And Free Express Delivery - OFF 50%!')" />
     <x-container>
-        <div class="flex items-center justify-between h-16">
+        <div class="flex h-16 items-center justify-between">
             <button
                 type="button"
                 @click="mobileOpen = !mobileOpen"
-                class="lg:hidden -ml-2 rounded-md p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
+                class="-ml-2 rounded-md p-2 text-zinc-500 hover:text-zinc-900 lg:hidden dark:hover:text-white"
             >
                 <span class="sr-only">{{ __('Open menu') }}</span>
                 <x-flux::icon.bars-3 x-show="!mobileOpen" variant="outline" class="size-5" aria-hidden="true" />
@@ -19,7 +19,7 @@
                 <x-brand.icon class="size-8 fill-current text-black dark:text-white" aria-hidden="true" />
             </x-link>
 
-            <nav role="navigation" class="hidden lg:flex items-center gap-6">
+            <nav role="navigation" class="hidden items-center gap-6 lg:flex">
                 @php
                     $navItems = [
                         ['href' => route('home'), 'label' => __('Home'), 'active' => request()->routeIs('home')],
@@ -55,12 +55,12 @@
             </nav>
 
             <div class="flex items-center gap-4">
-                <x-link :href="route('shop.search')" class="text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
+                <x-link :href="route('shop.search')" class="text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white">
                     <span class="sr-only">{{ __('Search') }}</span>
                     <x-flux::icon.magnifying-glass variant="outline" class="size-5" aria-hidden="true" />
                 </x-link>
 
-                <x-link :href="route('shop.cart')" class="relative text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
+                <x-link :href="route('shop.cart')" class="relative text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white">
                     <span class="sr-only">{{ __('Cart') }}</span>
                     <x-flux::icon.shopping-bag variant="outline" class="size-5" aria-hidden="true" />
                     <livewire:cart-count />
@@ -68,7 +68,7 @@
 
                 <x-link
                     :href="auth()->check() ? route('dashboard') : route('login')"
-                    class="hidden lg:inline-flex text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition"
+                    class="hidden text-sm text-zinc-500 transition hover:text-zinc-900 lg:inline-flex dark:hover:text-white"
                 >
                     <x-flux::icon.user variant="outline" class="size-5" aria-hidden="true" />
                 </x-link>
@@ -76,8 +76,8 @@
         </div>
     </x-container>
 
-    <div x-show="mobileOpen" x-cloak x-transition class="lg:hidden border-t border-zinc-200 dark:border-zinc-700">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 py-4 space-y-3">
+    <div x-show="mobileOpen" x-cloak x-transition class="border-t border-zinc-200 lg:hidden dark:border-zinc-700">
+        <div class="mx-auto max-w-7xl space-y-3 p-4 sm:px-6">
             <x-link :href="route('home')" class="block text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white" @click="mobileOpen = false">
                 {{ __('Home') }}
             </x-link>
@@ -91,7 +91,7 @@
                 </x-link>
             @endforeach
 
-            <div class="border-t border-zinc-200 dark:border-zinc-700 pt-3 space-y-3">
+            <div class="space-y-3 border-t border-zinc-200 pt-3 dark:border-zinc-700">
                 @auth
                     <x-link :href="route('dashboard')" class="block text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white" @click="mobileOpen = false">
                         {{ __('My account') }}

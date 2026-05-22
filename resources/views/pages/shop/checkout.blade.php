@@ -59,8 +59,8 @@
                                         wire:click="selectAddress({{ $address->id }})"
                                         @class([
                                             'rounded-xl text-left transition',
-                                            'ring-zinc-900 dark:ring-white ring-2 ring-zinc-900 dark:ring-white' => $selectedAddressId === $address->id,
-                                            'ring-zinc-200 dark:ring-zinc-700 hover:border-zinc-400 dark:hover:border-zinc-500' => $selectedAddressId !== $address->id,
+                                            'ring-2 ring-zinc-900 dark:ring-white' => $selectedAddressId === $address->id,
+                                            'ring-zinc-200 hover:border-zinc-400 dark:ring-zinc-700 dark:hover:border-zinc-500' => $selectedAddressId !== $address->id,
                                         ])
                                     >
                                         <x-card>
@@ -81,7 +81,7 @@
                             </div>
 
                             @if ($selectedAddressId)
-                                <button type="button" wire:click="clearAddress" class="mt-3 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition underline">
+                                <button type="button" wire:click="clearAddress" class="mt-3 text-sm text-zinc-500 underline transition hover:text-zinc-900 dark:hover:text-white">
                                     {{ __('Use a new address instead') }}
                                 </button>
                             @endif
@@ -156,11 +156,11 @@
 
                 @if ($step === 2)
                     @if (count($deliveryOptions) === 0)
-                        <div class="flex items-center gap-4 rounded-xl border border-zinc-200 dark:border-zinc-700 p-4">
+                        <div class="flex items-center gap-4 rounded-xl border border-zinc-200 p-4 dark:border-zinc-700">
                             <flux:icon.shopping-bag variant="outline" class="size-5 text-zinc-400" />
                             <flux:text>{{ __('No delivery option available for your address.') }}</flux:text>
                         </div>
-                        <button type="button" wire:click="goToStep(1)" class="mt-4 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
+                        <button type="button" wire:click="goToStep(1)" class="mt-4 text-sm text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white">
                             <span>&larr;</span> {{ __('Return to shipping') }}
                         </button>
                     @else
@@ -171,13 +171,13 @@
                             <flux:radio.group wire:model="selectedDeliveryOption" variant="cards" class="flex-col">
                                 @foreach ($deliveryOptions as $option)
                                     <flux:radio value="{{ $option['service_code'] }}" class="w-full">
-                                        <div class="flex items-center justify-between w-full">
+                                        <div class="flex w-full items-center justify-between">
                                             <div class="flex items-start gap-3">
                                                 @if ($option['carrier_logo'])
                                                     <img src="{{ $option['carrier_logo'] }}" alt="{{ $option['carrier_name'] }}" class="mt-0.5 size-6 rounded-full object-cover" />
                                                 @endif
                                                 <div class="flex flex-col">
-                                                    <span class="text-sm font-medium font-heading">{{ $option['service_name'] }}</span>
+                                                    <span class="font-heading text-sm font-medium">{{ $option['service_name'] }}</span>
                                                     @if ($option['estimated_days'])
                                                         <span class="text-sm text-zinc-500">{{ __(':days days delivery', ['days' => $option['estimated_days']]) }}</span>
                                                     @elseif ($option['description'])
@@ -215,8 +215,8 @@
                             <flux:radio.group wire:model="paymentMethodId" variant="cards" class="flex-col">
                                 @foreach ($paymentOptions as $method)
                                     <flux:radio value="{{ $method['id'] }}" class="w-full">
-                                        <div class="flex items-center justify-between gap-6 w-full">
-                                            <span class="text-sm font-medium font-heading">{{ $method['title'] }}</span>
+                                        <div class="flex w-full items-center justify-between gap-6">
+                                            <span class="font-heading text-sm font-medium">{{ $method['title'] }}</span>
                                             @if ($method['logo'])
                                                 <img src="{{ $method['logo'] }}" alt="{{ $method['title'] }}" class="h-5 w-auto object-cover" />
                                             @endif
@@ -225,7 +225,7 @@
                                 @endforeach
                             </flux:radio.group>
 
-                            <p class="text-sm leading-5 text-zinc-500">
+                            <p class="text-sm/5 text-zinc-500">
                                 {{ __("By clicking 'Place my order', you confirm that you have read and accepted our terms of use and returns policy.") }}
                             </p>
                         @endif
@@ -240,7 +240,7 @@
 
             <div class="mt-8 lg:col-span-5 lg:mt-0">
                 <x-card class="p-6">
-                    <flux:heading size="lg" class="font-heading font-semibold text-lg">{{ __('Order Summary') }}</flux:heading>
+                    <flux:heading size="lg" class="font-heading text-lg font-semibold">{{ __('Order Summary') }}</flux:heading>
 
                     @if ($cart)
                         <ul role="list" class="mt-4 divide-y divide-zinc-200 dark:divide-zinc-700">
@@ -276,13 +276,13 @@
                         $subtotal = $context?->total ?? 0;
                     @endphp
 
-                    <dl class="mt-4 space-y-3 text-sm text-zinc-500 border-t border-zinc-200 dark:border-zinc-700 pt-4">
-                        <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-700 pb-3">
+                    <dl class="mt-4 space-y-3 border-t border-zinc-200 pt-4 text-sm text-zinc-500 dark:border-zinc-700">
+                        <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                             <dt>{{ __('Tax') }}</dt>
                             <dd class="text-base text-zinc-900 dark:text-white">{{ shopper_money_format($context?->taxTotal ?? 0) }}</dd>
                         </div>
 
-                        <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-700 pb-3">
+                        <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                             <dt>{{ __('Delivery') }}</dt>
                             <dd class="text-base text-zinc-900 dark:text-white">
                                 @if ($deliveryPrice !== null)
@@ -294,7 +294,7 @@
                         </div>
 
                         @if($context && $context->discountTotal > 0)
-                            <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-700 pb-3">
+                            <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                                 <dt>{{ __('Discount') }}</dt>
                                 <dd class="text-emerald-600">-{{ shopper_money_format($context->discountTotal) }}</dd>
                             </div>

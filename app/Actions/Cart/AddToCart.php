@@ -15,10 +15,10 @@ final readonly class AddToCart
         private CartManager $cartManager,
     ) {}
 
-    public function handle(Product $product, ?ProductVariant $variant = null): CartLine
+    public function handle(Product $product, ?ProductVariant $variant = null, int $quantity = 1): CartLine
     {
         $purchasable = $variant ?? $product;
 
-        return $this->cartManager->add(cartSession(), $purchasable);
+        return $this->cartManager->add(cartSession(), $purchasable, $quantity);
     }
 }

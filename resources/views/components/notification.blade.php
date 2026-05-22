@@ -38,7 +38,7 @@
                 </div>
             </template>
             <p x-text="message" class="text-sm font-medium text-zinc-900 dark:text-white"></p>
-            <button @click="shown = false" class="ml-auto -mr-1 shrink-0 rounded-md p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-300 transition">
+            <button @click="shown = false" class="-mr-1 ml-auto shrink-0 rounded-md p-1 text-zinc-400 transition hover:text-zinc-600 dark:hover:text-zinc-300">
                 <span class="sr-only">{{ __('Close') }}</span>
                 <x-flux::icon.x-mark variant="micro" class="size-4" />
             </button>

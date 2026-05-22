@@ -32,7 +32,7 @@
                             @endphp
 
                             <li class="flex gap-4 py-6" wire:key="cart-line-{{ $line->id }}">
-                                <div class="size-20 shrink-0 overflow-hidden rounded-lg bg-zinc-100 dark:bg-zinc-800 sm:size-24">
+                                <div class="size-20 shrink-0 overflow-hidden rounded-lg bg-zinc-100 sm:size-24 dark:bg-zinc-800">
                                     <img src="{{ $image ?: $fallback }}" alt="{{ $purchasable->name }}" class="size-full object-cover object-center" />
                                 </div>
 
@@ -58,13 +58,13 @@
                                             <button type="button" wire:click="updateQuantity({{ $line->id }}, {{ $line->quantity - 1 }})" class="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white" @disabled($line->quantity <= 1)>
                                                 <flux:icon.minus variant="micro" class="size-3" />
                                             </button>
-                                            <span class="min-w-[1.5rem] text-center text-xs font-medium text-zinc-900 dark:text-white">{{ $line->quantity }}</span>
+                                            <span class="min-w-6 text-center text-xs font-medium text-zinc-900 dark:text-white">{{ $line->quantity }}</span>
                                             <button type="button" wire:click="updateQuantity({{ $line->id }}, {{ $line->quantity + 1 }})" class="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
                                                 <flux:icon.plus variant="micro" class="size-3" />
                                             </button>
                                         </div>
 
-                                        <button type="button" wire:click="removeLine({{ $line->id }})" class="text-sm text-red-500 hover:text-red-700 transition">
+                                        <button type="button" wire:click="removeLine({{ $line->id }})" class="text-sm text-red-500 transition hover:text-red-700">
                                             {{ __('Remove') }}
                                         </button>
                                     </div>
@@ -73,35 +73,35 @@
                         @endforeach
                     </ul>
 
-                    <div class="mt-4 flex items-center justify-between border-t border-zinc-200 dark:border-zinc-700 pt-4">
-                        <x-link :href="route('shop.index')" class="text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition">
+                    <div class="mt-4 flex items-center justify-between border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                        <x-link :href="route('shop.index')" class="text-sm text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white">
                             &larr; {{ __('Continue Shopping') }}
                         </x-link>
-                        <button type="button" wire:click="clearCart" wire:confirm="{{ __('Are you sure you want to clear your cart?') }}" class="text-sm text-red-500 hover:text-red-700 transition">
+                        <button type="button" wire:click="clearCart" wire:confirm="{{ __('Are you sure you want to clear your cart?') }}" class="text-sm text-red-500 transition hover:text-red-700">
                             {{ __('Clear Cart') }}
                         </button>
                     </div>
                 </div>
 
                 <div class="mt-8 lg:col-span-5 lg:mt-0">
-                    <div class="rounded-2xl bg-zinc-50 dark:bg-zinc-800/50 p-6">
+                    <div class="rounded-2xl bg-zinc-50 p-6 dark:bg-zinc-800/50">
                         <flux:heading size="lg">{{ __('Order Summary') }}</flux:heading>
 
                         <dl class="mt-6 space-y-3 text-sm text-zinc-500">
-                            <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-700 pb-3">
+                            <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                                 <dt>{{ __('Tax') }}</dt>
                                 <dd class="text-base text-zinc-900 dark:text-white">
                                     {{ shopper_money_format($context?->taxTotal ?? 0) }}
                                 </dd>
                             </div>
 
-                            <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-700 pb-3">
+                            <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                                 <dt>{{ __('Delivery') }}</dt>
                                 <dd>{{ __('Calculated at checkout') }}</dd>
                             </div>
 
                             @if($context && $context->discountTotal > 0)
-                                <div class="flex items-center justify-between border-b border-zinc-200 dark:border-zinc-700 pb-3">
+                                <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                                     <dt>{{ __('Discount') }}</dt>
                                     <dd class="text-emerald-600">-{{ shopper_money_format($context->discountTotal) }}</dd>
                                 </div>

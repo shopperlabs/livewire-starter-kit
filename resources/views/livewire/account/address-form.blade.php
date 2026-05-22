@@ -82,7 +82,7 @@
                 </flux:radio.group>
             </div>
 
-            <div class="flex gap-3 justify-end">
+            <div class="flex justify-end gap-3">
                 <flux:button type="button" wire:click="$set('showModal', false)">
                     {{ __('Cancel') }}
                 </flux:button>

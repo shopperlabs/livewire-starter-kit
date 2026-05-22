@@ -5,17 +5,22 @@ declare(strict_types=1);
 namespace App\Livewire\Pages;
 
 use Illuminate\Contracts\View\View;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Shopper\Core\Models\Order;
 
-class StripePayment extends Component
+final class StripePayment extends Component
 {
+    #[Locked]
     public Order $order;
 
+    #[Locked]
     public string $clientSecret;
 
+    #[Locked]
     public string $publishableKey;
 
+    #[Locked]
     public string $returnUrl;
 
     public function mount(string $number): void

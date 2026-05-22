@@ -26,7 +26,7 @@ class ShopByCategory extends Component
                 ->whereNull('parent_id')
                 ->where('is_enabled', true)
                 ->has('products')
-                ->withCount(['products' => fn ($query) => $query->whereNull('sh_products.deleted_at')])
+                ->withCount(['products' => fn ($query) => $query->whereNull(shopper_table('products').'.deleted_at')])
                 ->orderByDesc('products_count')
                 ->with('media')
                 ->limit(8)

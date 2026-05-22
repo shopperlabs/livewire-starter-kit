@@ -5,7 +5,7 @@
 <div>
     <x-container class="py-16 lg:max-w-lg">
         <div class="text-center">
-            <h1 class="text-2xl font-bold font-heading tracking-tight text-zinc-900 dark:text-white">
+            <h1 class="font-heading text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
                 {{ __('Complete your payment') }}
             </h1>
             <p class="mt-2 text-sm text-zinc-500">
@@ -20,7 +20,7 @@
 
             <flux:button
                 variant="primary"
-                class="w-full mt-6"
+                class="mt-6 w-full"
                 x-on:click="submitPayment"
                 x-bind:disabled="processing"
             >

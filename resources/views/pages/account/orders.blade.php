@@ -59,14 +59,14 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
     <div class="flex items-center gap-3">
         <flux:heading size="xl" level="1">{{ __('Your Orders') }}</flux:heading>
         @if ($orders->total() > 0)
-            <span class="inline-flex items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+            <span class="inline-flex items-center justify-center rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
                 {{ $orders->total() }}
             </span>
         @endif
     </div>
 
     <div class="mt-6 flex items-center justify-between">
-        <div class="flex items-center gap-1 rounded-lg border border-zinc-200 dark:border-zinc-700 p-1">
+        <div class="flex items-center gap-1 rounded-lg border border-zinc-200 p-1 dark:border-zinc-700">
             <button
                 type="button"
                 wire:click="$set('tab', 'all')"
@@ -117,8 +117,8 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
     @else
         <div class="mt-6 space-y-6">
             @foreach ($orders as $order)
-                <div class="rounded-xl border border-zinc-200 dark:border-zinc-700 overflow-hidden">
-                    <div class="flex flex-wrap items-start justify-between gap-4 bg-zinc-50 dark:bg-zinc-800/50 px-5 py-4 border-b border-zinc-200 dark:border-zinc-700">
+                <div class="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
+                    <div class="flex flex-wrap items-start justify-between gap-4 border-b border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-700 dark:bg-zinc-800/50">
                         <div class="flex flex-wrap items-center gap-8 text-sm">
                             <div>
                                 <dt class="text-xs text-zinc-500">{{ __('Order placed') }}</dt>
@@ -133,10 +133,15 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
                                 </dd>
                             </div>
                             @if ($order->shippingAddress)
-                                <div>
+                                <div class="max-w-xs">
                                     <dt class="text-xs text-zinc-500">{{ __('Ship to') }}</dt>
                                     <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
-                                        {{ $order->shippingAddress->full_name }}
+                                        <span>
+                                            {{ $order->shippingAddress->street_address }}
+                                        </span>
+                                        <span class="text-xs font-normal text-zinc-700">
+                                            @if ($order->shippingAddress->postal_code){{ $order->shippingAddress->postal_code }} @endif{{ $order->shippingAddress->city }}@if ($order->shippingAddress->country_name), {{ $order->shippingAddress->country_name }}@endif
+                                        </span>
                                     </dd>
                                 </div>
                             @endif
@@ -152,8 +157,8 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
                     </div>
 
                     <div class="px-5 py-4">
-                        <div class="flex items-center gap-3 flex-wrap">
-                            <h3 class="text-base font-semibold text-zinc-900 dark:text-white font-heading">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <h3 class="font-heading text-base font-semibold text-zinc-900 dark:text-white">
                                 {{ $shippingLabel($order) }}
                             </h3>
                             @if ($order->status === OrderStatus::Cancelled)

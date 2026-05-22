@@ -6,7 +6,7 @@
             <flux:breadcrumbs.item>{{ $category->name }}</flux:breadcrumbs.item>
         </flux:breadcrumbs>
 
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <flux:heading size="xl">{{ $category->name }}</flux:heading>
                 @if($category->description)

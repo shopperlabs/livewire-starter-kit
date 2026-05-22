@@ -1,6 +1,6 @@
 <div>
     <x-container class="py-8 sm:py-12">
-        <div class="text-center max-w-xl mx-auto">
+        <div class="mx-auto max-w-xl text-center">
             <flux:heading size="xl">{{ __('Search') }}</flux:heading>
             <div class="mt-6">
                 <flux:input

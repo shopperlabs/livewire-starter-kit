@@ -3,7 +3,7 @@
         <x-container>
             <div class="relative py-20 sm:py-28 lg:py-36">
                 <div class="max-w-xl">
-                    <h1 class="text-5xl font-extrabold tracking-tight text-zinc-900 dark:text-white font-heading sm:text-6xl lg:text-7xl">
+                    <h1 class="font-heading text-5xl font-extrabold tracking-tight text-zinc-900 sm:text-6xl lg:text-7xl dark:text-white">
                         {{ __('Explore Premium Products') }}
                     </h1>
                     <p class="mt-6 text-lg text-zinc-600 dark:text-zinc-400">

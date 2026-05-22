@@ -56,7 +56,7 @@ class AddressForm extends Component
     public function mount(?int $addressId = null): void
     {
         $this->address = $addressId
-            ? Address::query()->findOrFail($addressId)
+            ? Auth::user()->addresses()->findOrFail($addressId)
             : new Address;
 
         $this->countries = Country::query()

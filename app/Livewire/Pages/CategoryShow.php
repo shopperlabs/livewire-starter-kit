@@ -24,6 +24,11 @@ class CategoryShow extends Component
     #[Url]
     public string $sort = 'latest';
 
+    public function mount(): void
+    {
+        abort_unless($this->category->is_enabled, 404);
+    }
+
     public function updatedSort(): void
     {
         $this->resetPage();
@@ -34,10 +39,9 @@ class CategoryShow extends Component
     public function products(): LengthAwarePaginator
     {
         $query = Product::query()
-            ->scopes('publish')
+            ->scopes(['publish', 'withCurrentPrices'])
             ->whereHas('categories', fn ($q) => $q->where('id', $this->category->id))
-            ->with(['media', 'brand'])
-            ->withCurrentPrices();
+            ->with(['media', 'brand']);
 
         $query = match ($this->sort) {
             'name' => $query->orderBy('name'),

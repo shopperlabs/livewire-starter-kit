@@ -15,7 +15,7 @@
     >
         <x-container>
             <div class="flex items-center justify-center py-2">
-                <p class="text-center text-xs font-medium text-white dark:text-zinc-900 sm:text-sm">
+                <p class="text-center text-xs font-medium text-white sm:text-sm dark:text-zinc-900">
                     {{ $message }}
                 </p>
                 <button

@@ -6,13 +6,14 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use RuntimeException;
 use Shopper\Core\Enum\OrderStatus;
 use Shopper\Core\Enum\PaymentStatus;
 use Shopper\Core\Models\Order;
 use Shopper\Payment\Facades\Payment;
 use Shopper\Payment\Models\PaymentTransaction;
 
-class StripeWebhookController extends Controller
+final class StripeWebhookController extends Controller
 {
     public function __invoke(Request $request): JsonResponse
     {
@@ -41,6 +42,20 @@ class StripeWebhookController extends Controller
 
         if (! $order) {
             return response()->json(['status' => 'no_order'], 404);
+        }
+
+        if (in_array($result->action, ['authorized', 'captured'], strict: true)
+            && $result->amount !== null
+            && $result->amount !== (int) $order->price_amount
+        ) {
+            report(new RuntimeException(sprintf(
+                'Stripe webhook amount mismatch: order #%d expected %d, received %d',
+                $order->id,
+                $order->price_amount,
+                $result->amount,
+            )));
+
+            return response()->json(['status' => 'amount_mismatch']);
         }
 
         $targetState = match ($result->action) {

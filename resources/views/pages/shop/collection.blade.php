@@ -1,15 +1,15 @@
 <div>
     <x-container class="py-8 sm:py-12">
-        <nav class="flex items-center gap-2 text-sm text-zinc-500 mb-8">
-            <x-link :href="route('home')" class="hover:text-zinc-900 dark:hover:text-white transition">{{ __('Home') }}</x-link>
+        <nav class="mb-8 flex items-center gap-2 text-sm text-zinc-500">
+            <x-link :href="route('home')" class="transition hover:text-zinc-900 dark:hover:text-white">{{ __('Home') }}</x-link>
             <span>/</span>
             <span class="text-zinc-900 dark:text-white">{{ $collection->name }}</span>
         </nav>
 
         <div>
-            <h1 class="text-3xl font-bold text-zinc-900 dark:text-white font-heading">{{ $collection->name }}</h1>
+            <h1 class="font-heading text-3xl font-bold text-zinc-900 dark:text-white">{{ $collection->name }}</h1>
             @if($collection->description)
-                <p class="mt-2 text-sm text-zinc-500 max-w-2xl">{{ strip_tags($collection->description) }}</p>
+                <p class="mt-2 max-w-2xl text-sm text-zinc-500">{{ strip_tags($collection->description) }}</p>
             @endif
         </div>
 

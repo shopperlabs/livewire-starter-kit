@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Pages;
 
+use App\Models\Product;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Computed;
@@ -19,7 +20,17 @@ class CollectionShow extends Component
     #[Locked]
     public Collection $collection;
 
-    /** @return LengthAwarePaginator<int, \App\Models\Product> */
+    public function mount(): void
+    {
+        abort_unless(
+            $this->collection->published_at !== null && $this->collection->published_at->isPast(),
+            404,
+        );
+    }
+
+    /**
+     * @return LengthAwarePaginator<int, Product>
+     */
     #[Computed]
     public function products(): LengthAwarePaginator
     {
