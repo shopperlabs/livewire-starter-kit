@@ -9,12 +9,12 @@
                 {{ __('Complete your payment') }}
             </h1>
             <p class="mt-2 text-sm text-zinc-500">
-                {{ __('Order #:number', ['number' => $order->number]) }}
+                {{ __('Enter your payment details to complete your order.') }}
             </p>
         </div>
 
         <div class="mt-10" x-data="stripePayment">
-            <div id="payment-element" class="min-h-[200px]"></div>
+            <div id="payment-element" class="min-h-50"></div>
 
             <p x-show="errorMessage" x-text="errorMessage" x-cloak class="mt-4 text-sm text-red-600"></p>
 

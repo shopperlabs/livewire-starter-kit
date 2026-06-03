@@ -7,13 +7,9 @@ namespace App\Livewire\Pages;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
-use Shopper\Core\Models\Order;
 
 final class StripePayment extends Component
 {
-    #[Locked]
-    public Order $order;
-
     #[Locked]
     public string $clientSecret;
 
@@ -23,24 +19,19 @@ final class StripePayment extends Component
     #[Locked]
     public string $returnUrl;
 
-    public function mount(string $number): void
+    public function mount(): void
     {
-        $this->order = Order::query()
-            ->where('number', $number)
-            ->where('customer_id', auth()->id())
-            ->firstOrFail();
-
-        $stripePayment = session()->pull('stripe_payment');
+        $stripePayment = session()->get('stripe_payment');
 
         if (! $stripePayment) {
-            $this->redirect(route('shop.checkout.success', ['order' => $this->order->id]), navigate: true);
+            $this->redirect(route('shop.checkout'), navigate: true);
 
             return;
         }
 
         $this->clientSecret = $stripePayment['client_secret'];
         $this->publishableKey = $stripePayment['publishable_key'];
-        $this->returnUrl = route('shop.checkout.success', ['order' => $this->order->id]);
+        $this->returnUrl = route('shop.checkout.stripe-return');
     }
 
     public function render(): View

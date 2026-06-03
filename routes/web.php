@@ -28,7 +28,8 @@ Route::get('cart', Cart::class)->name('shop.cart');
 // Checkout
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('checkout', Checkout::class)->name('shop.checkout');
-    Route::get('checkout/payment/{number}', StripePayment::class)->name('shop.checkout.stripe');
+    Route::get('checkout/payment', StripePayment::class)->name('shop.checkout.stripe');
+    Route::get('checkout/payment/return', App\Http\Controllers\StripeReturnController::class)->name('shop.checkout.stripe-return');
     Volt::route('checkout/success/{order}', 'shop.checkout-success')->name('shop.checkout.success');
 });
 

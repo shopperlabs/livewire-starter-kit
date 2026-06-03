@@ -9,6 +9,7 @@ use App\Actions\Fortify\ResetUserPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
@@ -67,6 +68,25 @@ class FortifyServiceProvider extends ServiceProvider
             $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username()).'|'.$request->ip()));
 
             return Limit::perMinute(5)->by($throttleKey);
+        });
+
+        RateLimiter::for('auth', fn (Request $request) => Limit::perMinute(5)->by($request->ip()));
+
+        $this->throttleGuestAuthRoutes();
+    }
+
+    /**
+     * Throttle the guest registration and password reset endpoints, which
+     * Fortify leaves unthrottled by default.
+     */
+    private function throttleGuestAuthRoutes(): void
+    {
+        $this->app->booted(function (): void {
+            $routes = Route::getRoutes();
+
+            foreach (['register.store', 'password.email', 'password.update'] as $name) {
+                $routes->getByName($name)?->middleware('throttle:auth');
+            }
         });
     }
 }

@@ -9,6 +9,8 @@ use App\Actions\Product\BuildVariantOptions;
 use App\Actions\Product\ResolveVariantAvailability;
 use App\Models\Product;
 use App\Models\ProductVariant;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
@@ -16,9 +18,12 @@ use Shopper\Cart\Exceptions\InsufficientStockException;
 
 class ProductShow extends Component
 {
+    use WithRateLimiting;
+
     #[Locked]
     public Product $product;
 
+    #[Locked]
     public ?ProductVariant $selectedVariant = null;
 
     public int $quantity = 1;
@@ -89,6 +94,14 @@ class ProductShow extends Component
 
     public function addToCart(): void
     {
+        try {
+            $this->rateLimit(30);
+        } catch (TooManyRequestsException) {
+            $this->dispatch('notify', type: 'error', message: __('Too many attempts. Please slow down.'));
+
+            return;
+        }
+
         $this->quantity = max(1, min($this->quantity, 10));
 
         if ($this->product->canUseVariants() && $this->product->variants->isNotEmpty() && ! $this->selectedVariant) {
@@ -99,6 +112,7 @@ class ProductShow extends Component
 
         try {
             resolve(AddToCart::class)->handle($this->product, $this->selectedVariant, $this->quantity);
+
             $this->dispatch('cart-updated');
             $this->dispatch('notify', type: 'success', message: __('Product added to cart!'));
         } catch (InsufficientStockException) {

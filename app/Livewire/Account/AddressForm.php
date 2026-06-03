@@ -9,6 +9,7 @@ use App\Actions\ZoneSessionManager;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Shopper\Core\Enum\AddressType;
@@ -49,15 +50,18 @@ class AddressForm extends Component
     #[Validate('nullable|string')]
     public ?string $phone_number = null;
 
-    public ?Address $address = null;
+    #[Locked]
+    public ?int $addressId = null;
 
     public Collection $countries;
 
     public function mount(?int $addressId = null): void
     {
-        $this->address = $addressId
+        $address = $addressId
             ? Auth::user()->addresses()->findOrFail($addressId)
-            : new Address;
+            : null;
+
+        $this->addressId = $address?->id;
 
         $this->countries = Country::query()
             ->whereIn(
@@ -71,8 +75,8 @@ class AddressForm extends Component
 
         $this->country_id = ZoneSessionManager::getSession()?->countryId;
 
-        if ($addressId && $this->address->id) {
-            $this->fill(array_merge($this->address->toArray(), ['type' => $this->address->type]));
+        if ($address) {
+            $this->fill(array_merge($address->toArray(), ['type' => $address->type]));
         }
     }
 
@@ -85,11 +89,14 @@ class AddressForm extends Component
     {
         $validated = $this->validate();
 
-        if ($this->address->exists) {
-            $this->address->update(array_merge($validated, ['user_id' => Auth::id()]));
-        } else {
-            Address::query()->create(array_merge($validated, ['user_id' => Auth::id()]));
+        $address = $this->addressId
+            ? Auth::user()->addresses()->findOrFail($this->addressId)
+            : new Address;
 
+        $address->fill(array_merge($validated, ['user_id' => Auth::id()]));
+        $address->save();
+
+        if (! $this->addressId) {
             $this->reset();
             $this->type = AddressType::Shipping;
         }
@@ -104,7 +111,7 @@ class AddressForm extends Component
     public function render(): View
     {
         return view('livewire.account.address-form', [
-            'title' => $this->address?->id
+            'title' => $this->addressId
                 ? __('Update address')
                 : __('Add new address'),
         ]);

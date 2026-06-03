@@ -148,7 +148,7 @@
                             <flux:input type="tel" wire:model="shippingPhone" />
                         </flux:field>
 
-                        <flux:button type="submit" variant="primary" class="w-full">
+                        <flux:button type="submit" variant="primary">
                             {{ __('Continue to Delivery') }}
                         </flux:button>
                     </form>
@@ -193,7 +193,7 @@
                                 @endforeach
                             </flux:radio.group>
 
-                            <flux:button type="submit" variant="primary" class="w-full">
+                            <flux:button type="submit" variant="primary">
                                 {{ __('Continue to Payment') }}
                             </flux:button>
                         </form>
@@ -230,7 +230,7 @@
                             </p>
                         @endif
 
-                        <flux:button type="submit" variant="primary" class="w-full" wire:loading.attr="disabled" :disabled="count($paymentOptions) === 0">
+                        <flux:button type="submit" variant="primary" wire:loading.attr="disabled" :disabled="count($paymentOptions) === 0">
                             <span wire:loading.remove wire:target="placeOrder">{{ __('Place my order') }}</span>
                             <span wire:loading wire:target="placeOrder">{{ __('Processing...') }}</span>
                         </flux:button>

@@ -11,13 +11,15 @@ final class ResolveZoneForCountry
 {
     public function handle(int $countryId): ?Zone
     {
-        return Cache::remember(
+        $zoneId = Cache::remember(
             "zone.country.{$countryId}",
             7200,
-            fn () => Zone::query()
+            fn (): ?int => Zone::query()
                 ->whereHas('countries', fn ($q) => $q->where('id', $countryId))
                 ->where('is_enabled', true)
-                ->first(),
+                ->value('id'),
         );
+
+        return $zoneId === null ? null : Zone::query()->find($zoneId);
     }
 }

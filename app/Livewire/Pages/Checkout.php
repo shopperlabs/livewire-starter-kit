@@ -10,6 +10,8 @@ use App\Actions\Checkout\FetchPaymentMethods;
 use App\Actions\CreateOrder;
 use App\Actions\ZoneSessionManager;
 use App\CheckoutSession;
+use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
+use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Livewire\Attributes\Computed;
@@ -19,15 +21,17 @@ use Livewire\Component;
 use Shopper\Cart\CartManager;
 use Shopper\Cart\CartSessionManager;
 use Shopper\Cart\Models\Cart as CartModel;
-use Shopper\Core\Enum\OrderStatus;
 use Shopper\Cart\Pipelines\CartPipelineContext;
 use Shopper\Core\Enum\AddressType;
 use Shopper\Core\Models\Address;
+use Shopper\Payment\Facades\Payment;
 use Shopper\Payment\Services\PaymentProcessingService;
 use Throwable;
 
 class Checkout extends Component
 {
+    use WithRateLimiting;
+
     #[Locked]
     public int $step = 1;
 
@@ -196,6 +200,14 @@ class Checkout extends Component
 
     public function placeOrder(): void
     {
+        try {
+            $this->rateLimit(10);
+        } catch (TooManyRequestsException) {
+            $this->dispatch('notify', type: 'error', message: __('Too many attempts. Please slow down.'));
+
+            return;
+        }
+
         $this->validate([
             'paymentMethodId' => 'required',
         ]);
@@ -210,31 +222,22 @@ class Checkout extends Component
         session()->forget(CheckoutSession::PAYMENT);
         session()->push(CheckoutSession::PAYMENT, $selectedMethod);
 
+        if (($selectedMethod['driver'] ?? null) === 'stripe') {
+            $this->prepareStripePayment();
+
+            return;
+        }
+
         try {
             $order = resolve(CreateOrder::class)->handle();
 
-            $service = resolve(PaymentProcessingService::class);
-            $result = $service->initiate($order);
-
-            if (! $result->success) {
-                $order->update(['status' => OrderStatus::Cancelled]);
-                $this->dispatch('notify', type: 'error', message: $result->message ?? __('Payment initiation failed.'));
-
-                return;
-            }
+            $result = resolve(PaymentProcessingService::class)->initiate($order);
 
             session()->forget(CheckoutSession::KEY);
             resolve(CartSessionManager::class)->forget();
 
-            if ($result->clientSecret) {
-                session()->put('stripe_payment', [
-                    'client_secret' => $result->clientSecret,
-                    'publishable_key' => $result->data['publishable_key'] ?? config('shopper.payment.drivers.stripe.credentials.publishable_key'),
-                ]);
-
-                $this->redirect(route('shop.checkout.stripe', ['number' => $order->number]));
-
-                return;
+            if (! $result->success) {
+                $this->dispatch('notify', type: 'error', message: $result->message ?? __('Payment initiation failed.'));
             }
 
             if ($result->redirectUrl) {
@@ -248,6 +251,60 @@ class Checkout extends Component
             report($e);
             $this->dispatch('notify', type: 'error', message: __('An error occurred while placing your order. Please try again.'));
         }
+    }
+
+    /**
+     * Create the Stripe PaymentIntent without creating an order. The order is
+     * created only after the payment is confirmed (see StripeReturnController).
+     */
+    private function prepareStripePayment(): void
+    {
+        $cart = resolve(CartSessionManager::class)->current();
+
+        if (! $cart || $cart->lines->isEmpty()) {
+            $this->redirect(route('shop.cart'), navigate: true);
+
+            return;
+        }
+
+        $context = resolve(CartManager::class)->calculate($cart);
+        $shippingPrice = (int) data_get(session()->get(CheckoutSession::KEY), 'shipping_option.0.price', 0);
+        $amount = (int) $context->total + $shippingPrice;
+
+        try {
+            $result = Payment::driver('stripe')->initiatePayment(
+                amount: $amount,
+                currency: $cart->currency_code,
+                context: [
+                    'metadata' => [
+                        'cart_id' => $cart->id,
+                        'customer_id' => auth()->id() ?? 0,
+                    ],
+                ],
+            );
+        } catch (Throwable $e) {
+            report($e);
+            $this->dispatch('notify', type: 'error', message: __('Unable to prepare payment. Please try again.'));
+
+            return;
+        }
+
+        if (! $result->success || ! $result->clientSecret) {
+            $this->dispatch('notify', type: 'error', message: $result->message ?? __('Payment preparation failed.'));
+
+            return;
+        }
+
+        $intentId = explode('_secret_', $result->clientSecret)[0] ?? null;
+
+        session()->put('stripe_payment', [
+            'client_secret' => $result->clientSecret,
+            'publishable_key' => $result->data['publishable_key']
+                ?? config('shopper.payment.drivers.stripe.credentials.publishable_key'),
+        ]);
+        session()->put('stripe_intent_id', $intentId);
+
+        $this->redirect(route('shop.checkout.stripe'));
     }
 
     public function goToStep(int $step): void

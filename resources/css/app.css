@@ -37,14 +37,8 @@
   ::file-selector-button {
     border-color: var(--color-zinc-200, currentColor);
   }
-  button,
-  [role="button"],
-  a,
-  select,
-  summary,
-  [type="button"],
-  [type="reset"],
-  [type="submit"] {
+  button, [role="button"], a, select, summary,
+  [type="button"], [type="reset"], [type="submit"] {
     cursor: pointer;
   }
 }
@@ -54,7 +48,7 @@
 }
 
 [data-flux-label] {
-  @apply mb-0! leading-tight!;
+  @apply  mb-0! leading-tight!;
 }
 
 input:focus[data-flux-control],
