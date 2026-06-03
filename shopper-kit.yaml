@@ -2,7 +2,7 @@ name: 'Shopper Livewire Starter Kit'
 description: 'A Livewire-powered storefront with reactive components for Shopper.'
 version: 1.0.0
 author: shopperlabs
-url: 'https://github.com/shopperlabs/livewire-starter-kit'
+url: https://github.com/shopperlabs/livewire-starter-kit
 
 shopper: ^2.9
 php: ^8.4

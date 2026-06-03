@@ -21,6 +21,7 @@ use Livewire\Component;
 use Shopper\Cart\CartManager;
 use Shopper\Cart\CartSessionManager;
 use Shopper\Cart\Models\Cart as CartModel;
+use Shopper\Core\Enum\OrderStatus;
 use Shopper\Cart\Pipelines\CartPipelineContext;
 use Shopper\Core\Enum\AddressType;
 use Shopper\Core\Models\Address;
