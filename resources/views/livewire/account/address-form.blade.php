@@ -1,5 +1,5 @@
 <div>
-    @if ($address?->exists)
+    @if ($addressId)
         <flux:button size="sm" wire:click="openModal">
             {{ __('Edit') }}
         </flux:button>

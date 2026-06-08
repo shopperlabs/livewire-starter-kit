@@ -27,6 +27,7 @@ final class FetchPaymentMethods
                 'id' => $method->id,
                 'title' => $method->title,
                 'slug' => $method->slug,
+                'driver' => $method->driver,
                 'description' => $method->description,
                 'logo' => $service->getLogoUrl($method),
             ])

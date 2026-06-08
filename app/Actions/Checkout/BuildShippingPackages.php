@@ -23,6 +23,10 @@ final class BuildShippingPackages
         foreach ($cart->lines as $line) {
             $model = $line->purchasable;
 
+            if (! $model) {
+                continue;
+            }
+
             for ($i = 0; $i < $line->quantity; $i++) {
                 $packages[] = new Package(
                     length: (float) ($model->depth_value ?? 10.0),
