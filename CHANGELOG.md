@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.2.0 - 2026-07-24
+
+### What's Changed
+
+* Create order after Stripe payment confirmation by @mckenziearts in https://github.com/shopperlabs/livewire-starter-kit/pull/3
+* feat(dependencies): upgrade shopper version to 2.11.1 by @mckenziearts in https://github.com/shopperlabs/livewire-starter-kit/pull/4
+
+**Full Changelog**: https://github.com/shopperlabs/livewire-starter-kit/compare/v1.1...v1.2.0
+
 ## v1.1 - 2026-05-22
 
 ### What's Changed
