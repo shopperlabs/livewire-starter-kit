@@ -28,7 +28,12 @@ return [
     |
     */
 
-    'view_path' => resource_path('views/pages'),
+    'component_namespaces' => [
+        'layouts' => resource_path('views/layouts'),
+        'pages' => resource_path('views/pages'),
+    ],
+
+    'smart_wire_keys' => true,
 
     /*
     |---------------------------------------------------------------------------
@@ -40,7 +45,7 @@ return [
     |
     */
 
-    'layout' => 'layouts.store',
+    'component_layout' => 'layouts::store',
 
     /*
     |---------------------------------------------------------------------------
@@ -52,7 +57,7 @@ return [
     |
     */
 
-    'lazy_placeholder' => null,
+    'component_placeholder' => null,
 
     /*
     |---------------------------------------------------------------------------
@@ -131,7 +136,7 @@ return [
 
     'navigate' => [
         'show_progress_bar' => true,
-        'progress_bar_color' => '#F53002',
+        'progress_bar_color' => '#0d9488',
     ],
 
     /*

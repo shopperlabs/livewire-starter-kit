@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Product;
 
+use Illuminate\Database\Eloquent\Collection;
 use App\Models\Product;
 use App\Models\ProductVariant;
 use Exception;
@@ -49,7 +50,7 @@ final class BuildVariantOptions
      */
     private function buildVariantMap(Product $product): array
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, ProductVariant> $variants */
+        /** @var Collection<int, ProductVariant> $variants */
         $variants = $product->variants;
 
         return $variants->map(fn (ProductVariant $variant): array => [

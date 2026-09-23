@@ -36,11 +36,11 @@
 
             <div class="mt-4 max-h-96 divide-y divide-zinc-200 overflow-y-auto dark:divide-zinc-700">
                 @foreach ($this->countries->groupBy('zoneName') as $zone => $countries)
-                    <div class="py-4">
+                    <div class="py-4" wire:key="zone-{{ $loop->index }}">
                         <h4 class="text-sm font-medium text-zinc-900 dark:text-white">{{ $zone }}</h4>
-                        <ul role="listbox" class="mt-2 space-y-1">
+                        <ul class="mt-2 space-y-1">
                             @foreach ($countries as $country)
-                                <li>
+                                <li wire:key="country-{{ $country->countryId }}">
                                     <button
                                         wire:click="selectZone({{ $country->countryId }})"
                                         type="button"

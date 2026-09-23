@@ -15,8 +15,9 @@ use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Shopper\Cart\Exceptions\InsufficientStockException;
+use Shopper\Cart\Exceptions\MissingPriceException;
 
-class ProductShow extends Component
+final class ProductShow extends Component
 {
     use WithRateLimiting;
 
@@ -53,7 +54,7 @@ class ProductShow extends Component
         abort_unless($this->product->isPublished(), 404);
 
         $currencyCode = current_currency();
-        $priceConstraint = fn ($q) => $q->whereRelation('currency', 'code', $currencyCode);
+        $priceConstraint = fn ($q) => $q->whereRelation('currency', 'code', $currencyCode)->with('currency');
 
         $this->product->load([
             'brand',
@@ -117,6 +118,8 @@ class ProductShow extends Component
             $this->dispatch('notify', type: 'success', message: __('Product added to cart!'));
         } catch (InsufficientStockException) {
             $this->dispatch('notify', type: 'error', message: __('Insufficient stock available.'));
+        } catch (MissingPriceException) {
+            $this->dispatch('notify', type: 'error', message: __('This product is not available in your currency.'));
         }
     }
 
@@ -150,7 +153,7 @@ class ProductShow extends Component
 
         $this->selectedVariant = ProductVariant::with([
             'media',
-            'prices' => fn ($q) => $q->whereRelation('currency', 'code', $currencyCode),
+            'prices' => fn ($q) => $q->whereRelation('currency', 'code', $currencyCode)->with('currency'),
         ])->find($variantId);
     }
 }

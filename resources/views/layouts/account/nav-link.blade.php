@@ -20,7 +20,7 @@
                 : window.location.pathname.startsWith(this.path)
         }
     }"
-    x-bind:class="active ? 'font-medium text-primary-500' : 'text-zinc-500'"
+    x-bind:class="active ? 'font-medium text-accent-content' : 'text-zinc-500'"
     class="inline-block text-sm hover:underline hover:decoration-2"
 >
     {{ $title }}

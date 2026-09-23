@@ -8,15 +8,18 @@
             <h1 class="font-heading text-2xl font-bold tracking-tight text-zinc-900 dark:text-white">
                 {{ __('Complete your payment') }}
             </h1>
-            <p class="mt-2 text-sm text-zinc-500">
+            <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
                 {{ __('Enter your payment details to complete your order.') }}
+            </p>
+            <p class="mt-4 text-3xl font-semibold text-zinc-900 dark:text-white">
+                {{ shopper_money_format($amount, $currency) }}
             </p>
         </div>
 
         <div class="mt-10" x-data="stripePayment">
             <div id="payment-element" class="min-h-50"></div>
 
-            <p x-show="errorMessage" x-text="errorMessage" x-cloak class="mt-4 text-sm text-red-600"></p>
+            <p x-show="errorMessage" x-text="errorMessage" x-cloak role="alert" class="mt-4 text-sm text-red-600 dark:text-red-400"></p>
 
             <flux:button
                 variant="primary"
@@ -51,9 +54,9 @@ Alpine.data('stripePayment', () => ({
         this.elements = this.stripe.elements({
             clientSecret: $wire.clientSecret,
             appearance: {
-                theme: 'stripe',
+                theme: document.documentElement.classList.contains('dark') ? 'night' : 'stripe',
                 variables: {
-                    colorPrimary: '#18181b',
+                    colorPrimary: '#0d9488',
                     borderRadius: '8px',
                 },
             },

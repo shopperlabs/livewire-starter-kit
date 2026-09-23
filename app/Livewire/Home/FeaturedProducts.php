@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
-class FeaturedProducts extends Component
+final class FeaturedProducts extends Component
 {
-    public const int CACHE_TTL = 7200;
+    public const int CACHE_TTL = 900;
 
     /** @return Collection<int, Product> */
     #[Computed]

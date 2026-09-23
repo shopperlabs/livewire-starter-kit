@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\StripeReturnController;
+use App\Livewire\Account\Addresses;
 use App\Livewire\Pages\Cart;
 use App\Livewire\Pages\CategoryIndex;
 use App\Livewire\Pages\CategoryShow;
@@ -13,7 +15,6 @@ use App\Livewire\Pages\ProductShow;
 use App\Livewire\Pages\SearchProducts;
 use App\Livewire\Pages\StripePayment;
 use Illuminate\Support\Facades\Route;
-use Livewire\Volt\Volt;
 
 // Storefront
 Route::get('/', Home::class)->name('home');
@@ -29,20 +30,15 @@ Route::get('cart', Cart::class)->name('shop.cart');
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('checkout', Checkout::class)->name('shop.checkout');
     Route::get('checkout/payment', StripePayment::class)->name('shop.checkout.stripe');
-    Route::get('checkout/payment/return', App\Http\Controllers\StripeReturnController::class)->name('shop.checkout.stripe-return');
-    Volt::route('checkout/success/{order}', 'shop.checkout-success')->name('shop.checkout.success');
+    Route::get('checkout/payment/return', StripeReturnController::class)->name('shop.checkout.stripe-return');
+    Route::livewire('checkout/success/{order}', 'pages::shop.checkout-success')->name('shop.checkout.success');
 });
-
-// Webhooks
-Route::post('webhooks/stripe', App\Http\Controllers\StripeWebhookController::class)
-    ->middleware('throttle:60,1')
-    ->name('webhooks.stripe');
 
 // Account
 Route::middleware(['auth', 'verified'])->prefix('account')->group(function (): void {
-    Volt::route('orders', 'account.orders')->name('account.orders');
-    Volt::route('orders/{order}', 'account.order-show')->name('account.orders.show');
-    Route::get('addresses', App\Livewire\Account\Addresses::class)->name('account.addresses');
+    Route::livewire('orders', 'pages::account.orders')->name('account.orders');
+    Route::livewire('orders/{order}', 'pages::account.order-show')->name('account.orders.show');
+    Route::get('addresses', Addresses::class)->name('account.addresses');
 });
 
 Route::view('dashboard', 'dashboard')

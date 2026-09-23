@@ -9,7 +9,7 @@ use Laravel\Fortify\Fortify;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
-use Livewire\Volt\Component;
+use Livewire\Component;
 
 new #[Layout('layouts.account'), Title('Security settings')] class extends Component {
     use PasswordValidationRules;
@@ -152,7 +152,7 @@ new #[Layout('layouts.account'), Title('Security settings')] class extends Compo
                                 </flux:button>
                             </div>
 
-                            <livewire:settings.two-factor.recovery-codes :$requiresConfirmation />
+                            <livewire:pages::settings.two-factor.recovery-codes :$requiresConfirmation />
                         </div>
                     @else
                         <div class="space-y-4">
@@ -169,7 +169,7 @@ new #[Layout('layouts.account'), Title('Security settings')] class extends Compo
                                 </flux:button>
                             </flux:modal.trigger>
 
-                            <livewire:settings.two-factor-setup-modal :requires-confirmation="$requiresConfirmation" />
+                            <livewire:pages::settings.two-factor-setup-modal :requires-confirmation="$requiresConfirmation" />
                         </div>
                     @endif
                 </div>

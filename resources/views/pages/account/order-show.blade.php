@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use Livewire\Volt\Component;
+use Livewire\Component;
 use Shopper\Core\Models\Order;
 
 new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
@@ -72,7 +72,7 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
             <x-card>
                 <h3 class="font-heading text-sm font-semibold text-zinc-900 dark:text-white">{{ __('Order summary') }}</h3>
                 @php
-                    $shippingPrice = $order->shippingOption?->price ?? 0;
+                    $shippingPrice = $order->shipping_amount ?? $order->shippingOption?->price ?? 0;
                     $itemsTotal = $order->price_amount - ($order->tax_amount ?? 0) - $shippingPrice;
                 @endphp
                 <dl class="mt-3 space-y-2 text-sm">
@@ -112,7 +112,7 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
         <x-card class="p-0">
             <div class="divide-y divide-zinc-200 dark:divide-white/10">
                 @foreach ($order->items as $item)
-                    <x-order.item :$item :currency-code="$order->currency_code" class="px-5 py-4" />
+                    <x-order.item :$item :currency-code="$order->currency_code" class="px-5 py-4" wire:key="item-{{ $item->id }}" />
                 @endforeach
             </div>
         </x-card>

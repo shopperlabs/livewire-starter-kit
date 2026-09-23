@@ -1,7 +1,9 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Support\Facades\Auth;
-use Livewire\Volt\Component;
+use Livewire\Component;
 use Shopper\Core\Models\Order;
 
 new class extends Component {
@@ -16,8 +18,8 @@ new class extends Component {
 <div>
     <div class="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6 lg:px-8">
         <div class="flex justify-center">
-            <div class="flex size-16 items-center justify-center rounded-full bg-green-100">
-                <x-flux::icon.check variant="outline" class="size-8 text-green-600" />
+            <div class="flex size-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-500/15">
+                <flux:icon.check variant="outline" class="size-8 text-green-600 dark:text-green-400" />
             </div>
         </div>
 
@@ -25,6 +27,12 @@ new class extends Component {
         <p class="mt-2 text-zinc-500">
             {{ __('Thank you for your purchase. Your order number is :number.', ['number' => $order->number]) }}
         </p>
+
+        @if ($order->isAwaitingPayment() && ($order->paymentMethod?->driver ?? 'manual') !== 'manual')
+            <flux:callout variant="warning" icon="clock" class="mt-6 text-left">
+                {{ __('Your payment is still being confirmed by the provider. The order will move on as soon as it is.') }}
+            </flux:callout>
+        @endif
 
         <div class="mt-8 rounded-2xl bg-zinc-50 p-6 text-left dark:bg-zinc-800/50">
             <h2 class="text-sm font-semibold text-zinc-900 dark:text-white">{{ __('Order Details') }}</h2>
@@ -40,6 +48,10 @@ new class extends Component {
                 <div class="flex justify-between">
                     <dt class="text-sm text-zinc-500">{{ __('Status') }}</dt>
                     <dd class="text-sm font-medium text-zinc-900 dark:text-white">{{ $order->status->getLabel() }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-sm text-zinc-500">{{ __('Payment') }}</dt>
+                    <dd class="text-sm font-medium text-zinc-900 dark:text-white">{{ $order->payment_status->getLabel() }}</dd>
                 </div>
             </dl>
         </div>

@@ -11,12 +11,12 @@
                 class="-ml-2 rounded-md p-2 text-zinc-500 hover:text-zinc-900 lg:hidden dark:hover:text-white"
             >
                 <span class="sr-only">{{ __('Open menu') }}</span>
-                <x-flux::icon.bars-3 x-show="!mobileOpen" variant="outline" class="size-5" aria-hidden="true" />
-                <x-flux::icon.x-mark x-show="mobileOpen" x-cloak variant="outline" class="size-5" aria-hidden="true" />
+                <flux:icon.bars-3 x-show="!mobileOpen" variant="outline" class="size-5" aria-hidden="true" />
+                <flux:icon.x-mark x-show="mobileOpen" x-cloak variant="outline" class="size-5" aria-hidden="true" />
             </button>
 
-            <x-link :href="route('home')" class="flex items-center gap-2">
-                <x-brand.icon class="size-8 fill-current text-black dark:text-white" aria-hidden="true" />
+            <x-link :href="route('home')">
+                <x-brand.logo />
             </x-link>
 
             <nav role="navigation" class="hidden items-center gap-6 lg:flex">
@@ -57,12 +57,12 @@
             <div class="flex items-center gap-4">
                 <x-link :href="route('shop.search')" class="text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white">
                     <span class="sr-only">{{ __('Search') }}</span>
-                    <x-flux::icon.magnifying-glass variant="outline" class="size-5" aria-hidden="true" />
+                    <flux:icon.magnifying-glass variant="outline" class="size-5" aria-hidden="true" />
                 </x-link>
 
                 <x-link :href="route('shop.cart')" class="relative text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white">
                     <span class="sr-only">{{ __('Cart') }}</span>
-                    <x-flux::icon.shopping-bag variant="outline" class="size-5" aria-hidden="true" />
+                    <flux:icon.shopping-bag variant="outline" class="size-5" aria-hidden="true" />
                     <livewire:cart-count />
                 </x-link>
 
@@ -70,7 +70,7 @@
                     :href="auth()->check() ? route('dashboard') : route('login')"
                     class="hidden text-sm text-zinc-500 transition hover:text-zinc-900 lg:inline-flex dark:hover:text-white"
                 >
-                    <x-flux::icon.user variant="outline" class="size-5" aria-hidden="true" />
+                    <flux:icon.user variant="outline" class="size-5" aria-hidden="true" />
                 </x-link>
             </div>
         </div>

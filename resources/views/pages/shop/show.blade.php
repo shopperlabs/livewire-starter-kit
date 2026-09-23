@@ -28,7 +28,7 @@
                             <button
                                 type="button"
                                 @click="activeImage = '{{ $thumbnail }}'"
-                                class="aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-2 ring-transparent focus:ring-zinc-900 dark:bg-zinc-800 dark:focus:ring-white"
+                                class="aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-2 ring-transparent focus:ring-accent dark:bg-zinc-800"
                             >
                                 <img src="{{ $thumbnail }}" alt="" class="size-full object-cover object-center" />
                             </button>
@@ -37,7 +37,7 @@
                             <button
                                 type="button"
                                 @click="activeImage = '{{ $image->getUrl() }}'"
-                                class="aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-2 ring-transparent focus:ring-zinc-900 dark:bg-zinc-800 dark:focus:ring-white"
+                                class="aspect-square overflow-hidden rounded-lg bg-zinc-100 ring-2 ring-transparent focus:ring-accent dark:bg-zinc-800"
                             >
                                 <img src="{{ $image->getUrl() }}" alt="" class="size-full object-cover object-center" />
                             </button>
@@ -74,7 +74,7 @@
                                                 wire:click="selectOption({{ $option['id'] }}, {{ $value['id'] }})"
                                                 @class([
                                                     'size-8 rounded-full border-2 transition',
-                                                    'border-zinc-900 ring-2 ring-zinc-900 ring-offset-2 dark:border-white dark:ring-white' => $isSelected,
+                                                    'border-accent ring-2 ring-accent ring-offset-2 dark:ring-offset-zinc-900' => $isSelected,
                                                     'border-zinc-300 hover:border-zinc-500 dark:border-zinc-600' => !$isSelected && $isAvailable,
                                                     'cursor-not-allowed border-zinc-200 opacity-30 dark:border-zinc-700' => !$isAvailable,
                                                 ])
@@ -90,7 +90,7 @@
                                                 wire:click="selectOption({{ $option['id'] }}, {{ $value['id'] }})"
                                                 @class([
                                                     'rounded-lg border px-4 py-2 text-sm font-medium transition',
-                                                    'border-zinc-900 bg-zinc-900 text-white dark:border-white dark:bg-white dark:text-zinc-900' => $isSelected,
+                                                    'border-accent bg-accent text-accent-foreground' => $isSelected,
                                                     'border-zinc-300 text-zinc-900 hover:border-zinc-500 dark:border-zinc-600 dark:text-white dark:hover:border-zinc-400' => !$isSelected && $isAvailable,
                                                     'cursor-not-allowed border-zinc-200 text-zinc-300 dark:border-zinc-700 dark:text-zinc-600' => !$isAvailable,
                                                 ])
@@ -114,7 +114,7 @@
                             class="px-3 py-2 text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white"
                             @disabled($quantity <= 1)
                         >
-                            <x-flux::icon.minus variant="micro" class="size-4" />
+                            <flux:icon.minus variant="micro" class="size-4" />
                         </button>
                         <span class="min-w-8 text-center text-sm font-medium text-zinc-900 dark:text-white">{{ $quantity }}</span>
                         <button
@@ -122,7 +122,7 @@
                             wire:click="$set('quantity', $wire.quantity + 1)"
                             class="px-3 py-2 text-zinc-500 transition hover:text-zinc-900 dark:hover:text-white"
                         >
-                            <x-flux::icon.plus variant="micro" class="size-4" />
+                            <flux:icon.plus variant="micro" class="size-4" />
                         </button>
                     </div>
 

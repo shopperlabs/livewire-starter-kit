@@ -5,7 +5,7 @@
             <div>
                 <div class="max-w-sm">
                     <x-link :href="route('home')">
-                        <x-brand.icon class="h-10 w-auto fill-current text-black dark:text-white" aria-hidden="true" />
+                        <x-brand.logo />
                     </x-link>
                     <p class="mt-8 text-sm/6 text-zinc-600 dark:text-zinc-400">
                         {{ __('Build modern, scalable online stores. It includes essential features like product management, checkout, and order handling.') }}

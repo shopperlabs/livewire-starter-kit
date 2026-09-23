@@ -29,18 +29,18 @@
         <div class="flex items-center gap-3 px-4 py-3">
             <template x-if="type === 'success'">
                 <div class="flex size-8 items-center justify-center rounded-full bg-green-100">
-                    <x-flux::icon.check variant="micro" class="size-4 text-green-600" />
+                    <flux:icon.check variant="micro" class="size-4 text-green-600" />
                 </div>
             </template>
             <template x-if="type === 'error'">
                 <div class="flex size-8 items-center justify-center rounded-full bg-red-100">
-                    <x-flux::icon.x-mark variant="micro" class="size-4 text-red-600" />
+                    <flux:icon.x-mark variant="micro" class="size-4 text-red-600" />
                 </div>
             </template>
             <p x-text="message" class="text-sm font-medium text-zinc-900 dark:text-white"></p>
             <button @click="shown = false" class="-mr-1 ml-auto shrink-0 rounded-md p-1 text-zinc-400 transition hover:text-zinc-600 dark:hover:text-zinc-300">
                 <span class="sr-only">{{ __('Close') }}</span>
-                <x-flux::icon.x-mark variant="micro" class="size-4" />
+                <flux:icon.x-mark variant="micro" class="size-4" />
             </button>
         </div>
     </div>

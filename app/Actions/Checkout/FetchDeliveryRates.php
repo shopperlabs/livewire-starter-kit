@@ -4,123 +4,163 @@ declare(strict_types=1);
 
 namespace App\Actions\Checkout;
 
+use Illuminate\Support\Collection;
+use Shopper\Cart\Models\Cart;
+use Shopper\Cart\Models\CartAddress;
+use Shopper\Cart\Models\CartLine;
+use Shopper\Core\Enum\ProductType;
 use Shopper\Core\Models\Carrier;
-use Shopper\Core\Models\Country;
-use Shopper\Core\Models\Zone;
-use Shopper\Shipping\DataTransferObjects\Address as ShippingAddress;
-use Shopper\Shipping\DataTransferObjects\Package;
+use Shopper\Core\Models\Contracts\Inventory;
+use Shopper\Core\Models\Product;
+use Shopper\Shipping\DataTransferObjects\Address;
+use Shopper\Shipping\DataTransferObjects\ShippingRate;
 use Shopper\Shipping\Services\CarrierRateService;
-use Throwable;
 
-final class FetchDeliveryRates
+final readonly class FetchDeliveryRates
 {
-    /**
-     * @param  array<string, mixed>  $shippingAddress
-     * @param  array<int, Package>  $packages
-     * @return array<int, array<string, mixed>>
-     */
-    public function handle(array $shippingAddress, array $packages): array
-    {
-        $countryId = $shippingAddress['country_id'] ?? null;
-
-        if (! $countryId) {
-            return [];
-        }
-
-        $zone = resolve(ResolveZoneForCountry::class)->handle($countryId);
-
-        if (! $zone) {
-            return [];
-        }
-
-        $service = resolve(CarrierRateService::class);
-
-        try {
-            $rates = $service->getRatesForZone(
-                zone: $zone,
-                from: $this->buildOriginAddress(),
-                to: $this->buildDestinationAddress($shippingAddress),
-                packages: $packages,
-            );
-        } catch (Throwable $e) {
-            report($e);
-
-            return [];
-        }
-
-        return $this->formatRates($rates, $zone, $service);
-    }
-
-    private function buildOriginAddress(): ShippingAddress
-    {
-        return once(function (): ShippingAddress {
-            $countryId = shopper_setting('country_id');
-            $country = $countryId ? Country::query()->find($countryId) : null;
-
-            return new ShippingAddress(
-                firstName: shopper_setting('name') ?? '',
-                lastName: '',
-                street: shopper_setting('street_address') ?? '',
-                city: shopper_setting('city') ?? '',
-                postalCode: shopper_setting('postal_code') ?? '',
-                state: shopper_setting('state') ?? '',
-                country: $country?->cca2 ?? '',
-                phone: shopper_setting('phone_number'),
-            );
-        });
-    }
+    public function __construct(
+        private CarrierRateService $rateService,
+        private BuildShippingPackages $packages,
+    ) {}
 
     /**
-     * @param  array<string, mixed>  $shippingAddress
+     * Quote every carrier of the cart zone for the cart's shipping address.
+     * Option ids are "{carrier}:{service}", the format the cart stores and
+     * the order resolves back to a carrier option.
+     *
+     * @return array{options: array<int, array<string, mixed>>, warnings: array<int, string>}
      */
-    private function buildDestinationAddress(array $shippingAddress): ShippingAddress
+    public function handle(Cart $cart): array
     {
-        $country = Country::query()->find($shippingAddress['country_id'] ?? null);
+        $cart->loadMissing(['zone.carriers', 'zone.shippingOptions', 'lines.purchasable', 'addresses.country']);
 
-        return new ShippingAddress(
-            firstName: $shippingAddress['first_name'] ?? '',
-            lastName: $shippingAddress['last_name'] ?? '',
-            street: $shippingAddress['street_address'] ?? '',
-            city: $shippingAddress['city'] ?? '',
-            postalCode: $shippingAddress['postal_code'] ?? '',
-            state: $shippingAddress['state'] ?? '',
-            country: $country?->cca2 ?? '',
-            street2: $shippingAddress['street_address_plus'] ?? null,
-            phone: $shippingAddress['phone_number'] ?? null,
+        $zone = $cart->zone;
+        $lines = $this->shippableLines($cart);
+
+        if (! $zone || $lines->isEmpty()) {
+            return ['options' => [], 'warnings' => []];
+        }
+
+        $warnings = [];
+        $destination = $this->destination($cart->shippingAddress());
+        $origin = $destination ? $this->origin() : null;
+
+        if ($destination && ! $origin) {
+            $warnings[] = __('No shipping origin is configured, only flat rates are available.');
+        }
+
+        $result = $this->rateService->getZoneRates(
+            zone: $zone,
+            from: $origin,
+            to: $destination,
+            packages: $this->packages->handle($lines),
+        );
+
+        foreach ($result->failedCarriers as $carrier) {
+            $warnings[] = __(':carrier is temporarily unavailable.', ['carrier' => $carrier]);
+        }
+
+        $carriers = $zone->carriers->keyBy(fn (Carrier $carrier): string => $carrier->slug ?? $carrier->name);
+        $descriptions = $zone->shippingOptions->pluck('description', 'public_id');
+
+        $options = $result->rates
+            ->filter(fn (ShippingRate $rate): bool => strcasecmp($rate->currency, $cart->currency_code) === 0)
+            ->map(function (ShippingRate $rate) use ($carriers, $descriptions): array {
+                $carrier = $carriers->get($rate->carrierCode);
+
+                return [
+                    'id' => "{$rate->carrierCode}:{$rate->serviceCode}",
+                    'name' => $rate->serviceName,
+                    'amount' => $rate->amount,
+                    'currency' => $rate->currency,
+                    'estimated_days' => $rate->estimatedDays,
+                    'description' => $descriptions->get($rate->serviceCode),
+                    'carrier_name' => $carrier?->name ?? $rate->carrierCode,
+                    'carrier_logo' => $carrier ? $this->rateService->getLogoUrl($carrier) : null,
+                ];
+            })
+            ->values()
+            ->all();
+
+        return ['options' => $options, 'warnings' => $warnings];
+    }
+
+    public function requiresShipping(Cart $cart): bool
+    {
+        $cart->loadMissing('lines.purchasable');
+
+        return $this->shippableLines($cart)->isNotEmpty();
+    }
+
+    /**
+     * @return Collection<int, CartLine>
+     */
+    private function shippableLines(Cart $cart): Collection
+    {
+        return $cart->lines
+            ->filter(function (CartLine $line): bool {
+                $purchasable = $line->purchasable;
+
+                if ($purchasable instanceof Product) {
+                    return ! in_array($purchasable->type, [ProductType::Virtual, ProductType::External], true);
+                }
+
+                return $purchasable !== null;
+            })
+            ->values();
+    }
+
+    private function destination(?CartAddress $address): ?Address
+    {
+        $country = $address?->country?->cca2;
+
+        if (! $address || ! $country) {
+            return null;
+        }
+
+        return new Address(
+            firstName: $address->first_name ?? '',
+            lastName: $address->last_name ?? '',
+            street: $address->address_1 ?? '',
+            city: $address->city ?? '',
+            postalCode: $address->postal_code ?? '',
+            state: $address->state ?? '',
+            country: $country,
+            company: $address->company,
+            street2: $address->address_2,
+            phone: $address->phone,
             email: auth()->user()?->email,
         );
     }
 
     /**
-     * @return array<int, array<string, mixed>>
+     * The default inventory is the warehouse carrier rates are quoted from.
      */
-    private function formatRates(mixed $rates, Zone $zone, CarrierRateService $service): array
+    private function origin(): ?Address
     {
-        $carriers = $zone->carriers()
-            ->where('is_enabled', true)
-            ->get()
-            ->keyBy(fn (Carrier $carrier): string => $carrier->slug ?? $carrier->name);
+        $inventory = resolve(Inventory::class)::query()
+            ->with('country')
+            ->orderByDesc('is_default')
+            ->orderBy('priority')
+            ->first();
 
-        $carrierOptions = $zone->shippingOptions()
-            ->where('is_enabled', true)
-            ->get()
-            ->keyBy('id');
+        $country = $inventory?->country?->cca2;
 
-        return $rates->map(function ($rate) use ($carriers, $carrierOptions, $service): array {
-            $carrier = $carriers->get($rate->carrierCode);
-            $option = is_int($rate->serviceCode) ? $carrierOptions->get($rate->serviceCode) : null;
+        if (! $inventory || ! $country || ! $inventory->street_address) {
+            return null;
+        }
 
-            return [
-                'service_code' => $rate->serviceCode,
-                'service_name' => $rate->serviceName,
-                'amount' => $rate->amount,
-                'currency' => $rate->currency,
-                'carrier_code' => $rate->carrierCode,
-                'estimated_days' => $rate->estimatedDays,
-                'description' => $option?->description,
-                'carrier_name' => $carrier?->name ?? $rate->carrierCode,
-                'carrier_logo' => $carrier ? $service->getLogoUrl($carrier) : null,
-            ];
-        })->values()->all();
+        return new Address(
+            firstName: '',
+            lastName: $inventory->name,
+            street: $inventory->street_address,
+            city: $inventory->city,
+            postalCode: $inventory->postal_code,
+            state: '',
+            country: $country,
+            street2: $inventory->street_address_plus,
+            phone: $inventory->phone_number,
+            email: $inventory->email,
+        );
     }
 }

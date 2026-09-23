@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
-use Livewire\Volt\Component;
+use Livewire\Component;
 use Shopper\Core\Enum\GenderType;
 
 new #[Layout('layouts.account')] class extends Component {
@@ -123,7 +123,7 @@ new #[Layout('layouts.account')] class extends Component {
         </form>
 
         @if ($this->showDeleteUser)
-            <livewire:settings.delete-user-form />
+            <livewire:pages::settings.delete-user-form />
         @endif
     </x-pages::settings.layout>
 </section>

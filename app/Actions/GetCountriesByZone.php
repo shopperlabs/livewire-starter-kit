@@ -16,11 +16,6 @@ final class GetCountriesByZone
 
     public const int CACHE_TTL = 7200;
 
-    public static function flush(): void
-    {
-        Cache::forget(self::CACHE_KEY.'_'.app()->getLocale());
-    }
-
     public function handle(): Collection
     {
         $cacheKey = self::CACHE_KEY.'_'.app()->getLocale();

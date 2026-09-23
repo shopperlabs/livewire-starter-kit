@@ -11,7 +11,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Shopper\Core\Models\Category;
 
-class StoreHeader extends Component
+final class StoreHeader extends Component
 {
     /** @return Collection<int, Category> */
     #[Computed]

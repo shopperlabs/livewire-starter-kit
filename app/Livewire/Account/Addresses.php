@@ -14,7 +14,7 @@ use Livewire\Component;
 use Shopper\Core\Models\Address;
 
 #[Layout('layouts.account')]
-class Addresses extends Component
+final class Addresses extends Component
 {
     /** @return Collection<int, Address> */
     #[Computed]

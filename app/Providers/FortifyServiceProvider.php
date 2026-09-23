@@ -6,13 +6,16 @@ namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
+use Shopper\Cart\CartSessionManager;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -29,6 +32,11 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // The guest cart follows the customer: merged into their open cart, or adopted as is.
+        Event::listen(Login::class, static function (Login $event): void {
+            resolve(CartSessionManager::class)->associate($event->user);
+        });
+
         $this->configureActions();
         $this->configureViews();
         $this->configureRateLimiting();

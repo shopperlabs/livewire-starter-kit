@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Fortify\Features;
-use Livewire\Volt\Volt;
+use Livewire\Livewire;
 
 beforeEach(function (): void {
     $this->skipUnlessFortifyFeature(Features::twoFactorAuthentication());
@@ -60,7 +60,7 @@ test('two factor authentication disabled when confirmation abandoned between req
 
     $this->actingAs($user);
 
-    $component = Volt::test('settings.security');
+    $component = Livewire::test('pages::settings.security');
 
     $component->assertSet('twoFactorEnabled', false);
 
@@ -78,7 +78,7 @@ test('password can be updated', function (): void {
 
     $this->actingAs($user);
 
-    $response = Volt::test('settings.security')
+    $response = Livewire::test('pages::settings.security')
         ->set('current_password', 'password')
         ->set('password', 'new-password')
         ->set('password_confirmation', 'new-password')
@@ -96,7 +96,7 @@ test('correct password must be provided to update password', function (): void {
 
     $this->actingAs($user);
 
-    $response = Volt::test('settings.security')
+    $response = Livewire::test('pages::settings.security')
         ->set('current_password', 'wrong-password')
         ->set('password', 'new-password')
         ->set('password_confirmation', 'new-password')

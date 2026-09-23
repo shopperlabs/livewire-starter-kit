@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
-class CategoryIndex extends Component
+final class CategoryIndex extends Component
 {
     #[Computed]
     public function categories(): Collection

@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Laravel\Fortify\Features;
-use Livewire\Volt\Volt;
 
 Route::middleware(['auth'])->group(function (): void {
     Route::redirect('profile', 'profile/edit');
 
-    Volt::route('profile/edit', 'settings.profile')->name('profile.edit');
+    Route::livewire('profile/edit', 'pages::settings.profile')->name('profile.edit');
 });
 
 Route::middleware(['auth', 'verified'])->group(function (): void {
-    Volt::route('profile/appearance', 'settings.appearance')->name('appearance.edit');
+    Route::livewire('profile/appearance', 'pages::settings.appearance')->name('appearance.edit');
 
-    Volt::route('profile/security', 'settings.security')
+    Route::livewire('profile/security', 'pages::settings.security')
         ->middleware(
             when(
                 Features::canManageTwoFactorAuthentication()

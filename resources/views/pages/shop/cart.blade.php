@@ -1,12 +1,17 @@
 @php
     $cart = $this->cart;
     $context = $this->cartContext;
+    $currency = $cart?->currency_code;
     $thumbnailCollection = config('shopper.media.storage.thumbnail_collection');
 @endphp
 
 <div>
     <x-container class="py-8 sm:py-12">
         <flux:heading size="xl">{{ __('Shopping Cart') }}</flux:heading>
+
+        @if ($errors->has('order'))
+            <flux:callout variant="danger" icon="x-circle" class="mt-6">{{ $errors->first('order') }}</flux:callout>
+        @endif
 
         @if(!$cart || $cart->lines->isEmpty())
             <div class="mt-16 flex flex-col items-center justify-center text-center">
@@ -24,6 +29,7 @@
                 <div class="lg:col-span-7">
                     <ul role="list" class="divide-y divide-zinc-200 dark:divide-zinc-700">
                         @foreach($cart->lines as $line)
+                            @continue(! $line->purchasable)
                             @php
                                 $purchasable = $line->purchasable;
                                 $product = $purchasable instanceof \App\Models\ProductVariant ? $purchasable->product : $purchasable;
@@ -46,20 +52,20 @@
                                                     {{ $purchasable->name }}
                                                 @endif
                                             </h3>
-                                            <p class="mt-0.5 text-sm text-zinc-500">{{ shopper_money_format($line->unit_price_amount) }}</p>
+                                            <p class="mt-0.5 text-sm text-zinc-500">{{ shopper_money_format($line->unit_price_amount, $currency) }}</p>
                                         </div>
                                         <p class="text-sm font-medium text-zinc-900 dark:text-white">
-                                            {{ shopper_money_format($line->unit_price_amount * $line->quantity) }}
+                                            {{ shopper_money_format($line->unit_price_amount * $line->quantity, $currency) }}
                                         </p>
                                     </div>
 
                                     <div class="mt-2 flex items-center justify-between">
                                         <div class="flex items-center rounded-lg border border-zinc-300 dark:border-zinc-600">
-                                            <button type="button" wire:click="updateQuantity({{ $line->id }}, {{ $line->quantity - 1 }})" class="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white" @disabled($line->quantity <= 1)>
+                                            <button type="button" wire:click="updateQuantity({{ $line->id }}, {{ $line->quantity - 1 }})" aria-label="{{ __('Decrease quantity') }}" class="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white" @disabled($line->quantity <= 1)>
                                                 <flux:icon.minus variant="micro" class="size-3" />
                                             </button>
                                             <span class="min-w-6 text-center text-xs font-medium text-zinc-900 dark:text-white">{{ $line->quantity }}</span>
-                                            <button type="button" wire:click="updateQuantity({{ $line->id }}, {{ $line->quantity + 1 }})" class="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
+                                            <button type="button" wire:click="updateQuantity({{ $line->id }}, {{ $line->quantity + 1 }})" aria-label="{{ __('Increase quantity') }}" class="px-2 py-1 text-zinc-500 hover:text-zinc-900 dark:hover:text-white">
                                                 <flux:icon.plus variant="micro" class="size-3" />
                                             </button>
                                         </div>
@@ -87,11 +93,28 @@
                     <div class="rounded-2xl bg-zinc-50 p-6 dark:bg-zinc-800/50">
                         <flux:heading size="lg">{{ __('Order Summary') }}</flux:heading>
 
+                        <form wire:submit="applyCoupon" class="mt-6 flex items-start gap-2">
+                            <flux:field class="flex-1">
+                                <flux:input wire:model="couponCode" placeholder="{{ __('Promotion code') }}" />
+                                <flux:error name="couponCode" />
+                            </flux:field>
+                            <flux:button type="submit">{{ __('Apply') }}</flux:button>
+                        </form>
+
+                        @foreach ($cart->promotions->where('source', 'code') as $promotion)
+                            <div class="mt-3 flex items-center justify-between text-sm" wire:key="promotion-{{ $promotion->id }}">
+                                <flux:badge size="sm" color="emerald">{{ $promotion->code }}</flux:badge>
+                                <button type="button" wire:click="removeCoupon({{ \Illuminate\Support\Js::from($promotion->code) }})" class="text-zinc-500 underline hover:text-zinc-900 dark:hover:text-white">
+                                    {{ __('Remove') }}
+                                </button>
+                            </div>
+                        @endforeach
+
                         <dl class="mt-6 space-y-3 text-sm text-zinc-500">
                             <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                                 <dt>{{ __('Tax') }}</dt>
                                 <dd class="text-base text-zinc-900 dark:text-white">
-                                    {{ shopper_money_format($context?->taxTotal ?? 0) }}
+                                    {{ shopper_money_format($context?->taxTotal ?? 0, $currency) }}
                                 </dd>
                             </div>
 
@@ -103,7 +126,7 @@
                             @if($context && $context->discountTotal > 0)
                                 <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                                     <dt>{{ __('Discount') }}</dt>
-                                    <dd class="text-emerald-600">-{{ shopper_money_format($context->discountTotal) }}</dd>
+                                    <dd class="text-emerald-600 dark:text-emerald-400">-{{ shopper_money_format($context->discountTotal, $currency) }}</dd>
                                 </div>
                             @endif
 
@@ -112,7 +135,7 @@
                                     {{ __('Subtotal') }} {{ current_tax_label() }}
                                 </dt>
                                 <dd class="text-base font-semibold text-zinc-900 dark:text-white">
-                                    {{ shopper_money_format($context?->subtotal ?? 0) }}
+                                    {{ shopper_money_format($context?->subtotal ?? 0, $currency) }}
                                 </dd>
                             </div>
                         </dl>

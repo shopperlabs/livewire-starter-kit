@@ -5,7 +5,7 @@
         <x-link :href="route('account.orders')">
             <x-card class="flex items-center gap-3">
                 <div class="flex size-10 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <x-flux::icon.shopping-bag variant="outline" class="size-5 text-zinc-600 dark:text-zinc-400" />
+                    <flux:icon.shopping-bag variant="outline" class="size-5 text-zinc-600 dark:text-zinc-400" />
                 </div>
                 <div>
                     <p class="text-sm font-medium text-zinc-900 dark:text-white">{{ __('Orders') }}</p>
@@ -17,7 +17,7 @@
         <x-link :href="route('account.addresses')">
             <x-card class="flex items-center gap-3">
                 <div class="flex size-10 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <x-flux::icon.map-pin variant="outline" class="size-5 text-zinc-600 dark:text-zinc-400" />
+                    <flux:icon.map-pin variant="outline" class="size-5 text-zinc-600 dark:text-zinc-400" />
                 </div>
                 <div>
                     <p class="text-sm font-medium text-zinc-900 dark:text-white">{{ __('Addresses') }}</p>
@@ -29,7 +29,7 @@
         <x-link :href="route('profile.edit')">
             <x-card class="flex items-center gap-3">
                 <div class="flex size-10 items-center justify-center rounded-full bg-zinc-100 dark:bg-zinc-800">
-                    <x-flux::icon.user variant="outline" class="size-5 text-zinc-600 dark:text-zinc-400" />
+                    <flux:icon.user variant="outline" class="size-5 text-zinc-600 dark:text-zinc-400" />
                 </div>
                 <div>
                     <p class="text-sm font-medium text-zinc-900 dark:text-white">{{ __('Profile') }}</p>

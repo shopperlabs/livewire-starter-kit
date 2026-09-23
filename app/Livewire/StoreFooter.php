@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
-class StoreFooter extends Component
+final class StoreFooter extends Component
 {
     /** @return Collection<int, Category> */
     #[Computed]

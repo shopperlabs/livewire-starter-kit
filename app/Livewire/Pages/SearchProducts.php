@@ -12,7 +12,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-class SearchProducts extends Component
+final class SearchProducts extends Component
 {
     use WithPagination;
 
@@ -31,14 +31,8 @@ class SearchProducts extends Component
             return null;
         }
 
-        $escaped = str_replace(['%', '_'], ['\%', '\_'], $this->query);
-
         return Product::query()
-            ->scopes('publish')
-            ->where(fn ($q) => $q
-                ->where('name', 'like', "%{$escaped}%")
-                ->orWhere('description', 'like', "%{$escaped}%")
-                ->orWhere('sku', 'like', "%{$escaped}%"))
+            ->scopes(['publish', 'matching' => $this->query])
             ->with(['media', 'brand'])
             ->withCurrentPrices()
             ->latest()

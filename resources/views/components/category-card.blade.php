@@ -14,7 +14,7 @@
     :href="route('shop.category', $category)"
     {{ $attributes->twMerge(['class' => 'group relative flex flex-col items-center']) }}
 >
-    <div class="relative size-24 overflow-hidden rounded-full bg-zinc-100 ring-2 ring-transparent transition group-hover:ring-zinc-900 dark:bg-zinc-800 dark:group-hover:ring-white">
+    <div class="relative size-24 overflow-hidden rounded-full bg-zinc-100 ring-2 ring-transparent transition group-hover:ring-accent dark:bg-zinc-800">
         <img
             src="{{ $image ?: $fallback }}"
             alt="{{ $category->name }}"

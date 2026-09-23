@@ -11,7 +11,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Component;
 use Shopper\Core\Models\Collection;
 
-class FeaturedCollections extends Component
+final class FeaturedCollections extends Component
 {
     public const int CACHE_TTL = 7200;
 

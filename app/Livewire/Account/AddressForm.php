@@ -9,6 +9,7 @@ use App\Actions\ZoneSessionManager;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -16,44 +17,56 @@ use Shopper\Core\Enum\AddressType;
 use Shopper\Core\Models\Address;
 use Shopper\Core\Models\Country;
 
-class AddressForm extends Component
+final class AddressForm extends Component
 {
     public bool $showModal = false;
 
-    #[Validate('required|string')]
+    #[Validate('required|string|max:255')]
     public ?string $first_name = null;
 
-    #[Validate('required|string')]
+    #[Validate('required|string|max:255')]
     public ?string $last_name = null;
 
-    #[Validate('required|min:3')]
+    #[Validate('required|string|min:3|max:255')]
     public ?string $street_address = null;
 
-    #[Validate('nullable|string')]
+    #[Validate('nullable|string|max:255')]
     public ?string $street_address_plus = null;
 
     #[Validate('required')]
     public AddressType $type = AddressType::Shipping;
 
-    #[Validate('required')]
     public ?int $country_id = null;
 
-    #[Validate('required|string')]
+    #[Validate('required|string|max:20')]
     public ?string $postal_code = null;
 
-    #[Validate('required|string')]
+    #[Validate('required|string|max:255')]
     public ?string $city = null;
 
-    #[Validate('nullable|string')]
+    #[Validate('nullable|string|max:255')]
     public ?string $state = null;
 
-    #[Validate('nullable|string')]
+    #[Validate('nullable|string|max:20')]
     public ?string $phone_number = null;
 
     #[Locked]
     public ?int $addressId = null;
 
+    #[Locked]
     public Collection $countries;
+
+    /**
+     * Only countries of the current selling zone can be saved.
+     *
+     * @return array<string, mixed>
+     */
+    protected function rules(): array
+    {
+        return [
+            'country_id' => ['required', 'integer', Rule::in($this->countries->keys()->all())],
+        ];
+    }
 
     public function mount(?int $addressId = null): void
     {
@@ -97,8 +110,7 @@ class AddressForm extends Component
         $address->save();
 
         if (! $this->addressId) {
-            $this->reset();
-            $this->type = AddressType::Shipping;
+            $this->reset('first_name', 'last_name', 'street_address', 'street_address_plus', 'postal_code', 'city', 'state', 'phone_number', 'type');
         }
 
         $this->dispatch('notify', type: 'success', message: __('The address has been saved.'));

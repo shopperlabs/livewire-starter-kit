@@ -15,7 +15,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-class ProductIndex extends Component
+final class ProductIndex extends Component
 {
     use WithPagination;
 
@@ -62,8 +62,7 @@ class ProductIndex extends Component
             ->withCurrentPrices();
 
         if ($this->search !== '') {
-            $escaped = str_replace(['%', '_'], ['\%', '\_'], $this->search);
-            $query->where('name', 'like', "%{$escaped}%");
+            $query->scopes(['matching' => $this->search]);
         }
 
         if ($this->category) {

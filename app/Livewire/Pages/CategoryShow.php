@@ -14,7 +14,7 @@ use Livewire\Attributes\Url;
 use Livewire\Component;
 use Livewire\WithPagination;
 
-class CategoryShow extends Component
+final class CategoryShow extends Component
 {
     use WithPagination;
 
@@ -39,8 +39,7 @@ class CategoryShow extends Component
     public function products(): LengthAwarePaginator
     {
         $query = Product::query()
-            ->scopes(['publish', 'withCurrentPrices'])
-            ->whereHas('categories', fn ($q) => $q->where('id', $this->category->id))
+            ->scopes(['publish', 'withCurrentPrices', 'categoryTree' => $this->category->slug])
             ->with(['media', 'brand']);
 
         $query = match ($this->sort) {

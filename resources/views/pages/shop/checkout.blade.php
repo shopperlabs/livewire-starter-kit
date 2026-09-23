@@ -8,25 +8,32 @@
     <x-container class="py-8 sm:py-12">
         <flux:heading size="xl">{{ __('Checkout') }}</flux:heading>
 
-        <nav class="mt-8 mb-10">
+        @if ($errors->has('payment') || $errors->has('order'))
+            <flux:callout variant="danger" icon="x-circle" class="mt-6">
+                {{ $errors->first('payment') ?: $errors->first('order') }}
+            </flux:callout>
+        @endif
+
+        <nav class="mt-8 mb-10" aria-label="{{ __('Checkout steps') }}">
             <ol class="flex items-center gap-2">
                 @foreach ([1 => __('Shipping'), 2 => __('Delivery'), 3 => __('Payment')] as $stepNum => $stepLabel)
-                    <li class="flex items-center gap-2">
+                    <li class="flex items-center gap-2" wire:key="step-{{ $stepNum }}">
                         <button
                             type="button"
                             wire:click="goToStep({{ $stepNum }})"
                             @disabled($stepNum > $step)
+                            @if ($step === $stepNum) aria-current="step" @endif
                             @class([
                                 'flex items-center gap-2 text-sm font-medium transition',
                                 'text-zinc-900 dark:text-white' => $step === $stepNum,
-                                'text-green-600' => $step > $stepNum,
+                                'text-green-600 dark:text-green-400' => $step > $stepNum,
                                 'text-zinc-400 dark:text-zinc-500' => $step < $stepNum,
                             ])
                         >
                             <span @class([
                                 'flex size-7 items-center justify-center rounded-full text-xs font-bold',
-                                'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' => $step === $stepNum,
-                                'bg-green-100 text-green-600' => $step > $stepNum,
+                                'bg-accent text-accent-foreground' => $step === $stepNum,
+                                'bg-green-100 text-green-600 dark:bg-green-500/15 dark:text-green-400' => $step > $stepNum,
                                 'bg-zinc-100 text-zinc-400 dark:bg-zinc-800 dark:text-zinc-500' => $step < $stepNum,
                             ])>
                                 @if ($step > $stepNum)
@@ -56,11 +63,12 @@
                                 @foreach ($this->savedAddresses as $address)
                                     <button
                                         type="button"
+                                        wire:key="saved-address-{{ $address->id }}"
                                         wire:click="selectAddress({{ $address->id }})"
                                         @class([
                                             'rounded-xl text-left transition',
-                                            'ring-2 ring-zinc-900 dark:ring-white' => $selectedAddressId === $address->id,
-                                            'ring-zinc-200 hover:border-zinc-400 dark:ring-zinc-700 dark:hover:border-zinc-500' => $selectedAddressId !== $address->id,
+                                            'ring-2 ring-accent' => $selectedAddressId === $address->id,
+                                            'ring-1 ring-zinc-200 hover:ring-zinc-400 dark:ring-zinc-700 dark:hover:ring-zinc-500' => $selectedAddressId !== $address->id,
                                         ])
                                     >
                                         <x-card>
@@ -168,16 +176,20 @@
                             <flux:heading size="lg">{{ __('Delivery Method') }}</flux:heading>
                             <flux:error name="selectedDeliveryOption" />
 
+                            @foreach ($deliveryWarnings as $warning)
+                                <flux:callout variant="warning" icon="exclamation-triangle">{{ $warning }}</flux:callout>
+                            @endforeach
+
                             <flux:radio.group wire:model="selectedDeliveryOption" variant="cards" class="flex-col">
                                 @foreach ($deliveryOptions as $option)
-                                    <flux:radio value="{{ $option['service_code'] }}" class="w-full">
+                                    <flux:radio value="{{ $option['id'] }}" class="w-full" wire:key="delivery-{{ $option['id'] }}">
                                         <div class="flex w-full items-center justify-between">
                                             <div class="flex items-start gap-3">
                                                 @if ($option['carrier_logo'])
                                                     <img src="{{ $option['carrier_logo'] }}" alt="{{ $option['carrier_name'] }}" class="mt-0.5 size-6 rounded-full object-cover" />
                                                 @endif
                                                 <div class="flex flex-col">
-                                                    <span class="font-heading text-sm font-medium">{{ $option['service_name'] }}</span>
+                                                    <span class="font-heading text-sm font-medium">{{ $option['name'] }}</span>
                                                     @if ($option['estimated_days'])
                                                         <span class="text-sm text-zinc-500">{{ __(':days days delivery', ['days' => $option['estimated_days']]) }}</span>
                                                     @elseif ($option['description'])
@@ -214,7 +226,7 @@
                         @else
                             <flux:radio.group wire:model="paymentMethodId" variant="cards" class="flex-col">
                                 @foreach ($paymentOptions as $method)
-                                    <flux:radio value="{{ $method['id'] }}" class="w-full">
+                                    <flux:radio value="{{ $method['id'] }}" class="w-full" wire:key="payment-{{ $method['id'] }}">
                                         <div class="flex w-full items-center justify-between gap-6">
                                             <span class="font-heading text-sm font-medium">{{ $method['title'] }}</span>
                                             @if ($method['logo'])
@@ -245,6 +257,7 @@
                     @if ($cart)
                         <ul role="list" class="mt-4 divide-y divide-zinc-200 dark:divide-zinc-700">
                             @foreach ($cart->lines as $line)
+                                @continue(! $line->purchasable)
                                 @php
                                     $purchasable = $line->purchasable;
                                     $image = $purchasable->getFirstMediaUrl($thumbnailCollection);
@@ -261,7 +274,7 @@
                                             <flux:text size="xs">{{ __('Qty: :qty', ['qty' => $line->quantity]) }}</flux:text>
                                         </div>
                                         <flux:text class="text-sm! font-medium text-zinc-900! dark:text-white!">
-                                            {{ shopper_money_format($line->unit_price_amount * $line->quantity) }}
+                                            {{ shopper_money_format($line->unit_price_amount * $line->quantity, $cart->currency_code) }}
                                         </flux:text>
                                     </div>
                                 </li>
@@ -270,23 +283,21 @@
                     @endif
 
                     @php
-                        $shippingOption = session()->get(\App\CheckoutSession::SHIPPING_OPTION);
-                        $deliveryPrice = $shippingOption ? (int) data_get($shippingOption, '0.price', 0) : null;
-                        $deliveryCurrency = $shippingOption ? data_get($shippingOption, '0.currency') : null;
-                        $subtotal = $context?->total ?? 0;
+                        $currency = $cart?->currency_code;
+                        $deliveryPrice = $cart?->shipping_option_id ? ($context?->shippingTotal ?? 0) : null;
                     @endphp
 
                     <dl class="mt-4 space-y-3 border-t border-zinc-200 pt-4 text-sm text-zinc-500 dark:border-zinc-700">
                         <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                             <dt>{{ __('Tax') }}</dt>
-                            <dd class="text-base text-zinc-900 dark:text-white">{{ shopper_money_format($context?->taxTotal ?? 0) }}</dd>
+                            <dd class="text-base text-zinc-900 dark:text-white">{{ shopper_money_format($context?->taxTotal ?? 0, $currency) }}</dd>
                         </div>
 
                         <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                             <dt>{{ __('Delivery') }}</dt>
                             <dd class="text-base text-zinc-900 dark:text-white">
                                 @if ($deliveryPrice !== null)
-                                    {{ $deliveryPrice > 0 ? shopper_money_format($deliveryPrice, $deliveryCurrency) : __('Free') }}
+                                    {{ $deliveryPrice > 0 ? shopper_money_format($deliveryPrice, $currency) : __('Free') }}
                                 @else
                                     {{ __('Calculated at next step') }}
                                 @endif
@@ -296,7 +307,7 @@
                         @if($context && $context->discountTotal > 0)
                             <div class="flex items-center justify-between border-b border-zinc-200 pb-3 dark:border-zinc-700">
                                 <dt>{{ __('Discount') }}</dt>
-                                <dd class="text-emerald-600">-{{ shopper_money_format($context->discountTotal) }}</dd>
+                                <dd class="text-emerald-600 dark:text-emerald-400">-{{ shopper_money_format($context->discountTotal, $currency) }}</dd>
                             </div>
                         @endif
 
@@ -305,11 +316,7 @@
                                 {{ __('Total') }} {{ current_tax_label() }}
                             </dt>
                             <dd class="text-base font-semibold text-zinc-900 dark:text-white">
-                                @if ($deliveryPrice !== null && $deliveryPrice > 0)
-                                    {{ shopper_money_format($subtotal + $deliveryPrice) }}
-                                @else
-                                    {{ shopper_money_format($subtotal) }}
-                                @endif
+                                {{ shopper_money_format($context?->total ?? 0, $currency) }}
                             </dd>
                         </div>
                     </dl>

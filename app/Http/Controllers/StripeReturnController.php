@@ -4,155 +4,135 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Actions\CreateOrder;
-use App\CheckoutSession;
-use Illuminate\Contracts\Cache\LockTimeoutException;
+use App\Actions\Checkout\CompleteCheckout;
+use App\Exceptions\CheckoutException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Shopper\Cart\CartManager;
 use Shopper\Cart\CartSessionManager;
-use Shopper\Core\Enum\PaymentStatus;
-use Shopper\Core\Models\Order;
-use Shopper\Payment\Enum\TransactionStatus;
-use Shopper\Payment\Enum\TransactionType;
+use Shopper\Cart\Exceptions\DiscountLimitReachedException;
+use Shopper\Cart\Exceptions\InsufficientStockException;
+use Shopper\Cart\Exceptions\PriceChangedException;
+use Shopper\Cart\Models\Cart;
+use Shopper\Cart\Models\Contracts\Cart as CartContract;
+use Shopper\Core\Exceptions\CampaignBudgetExceededException;
+use Shopper\Payment\DataTransferObjects\PaymentResult;
+use Shopper\Payment\Exceptions\PaymentException;
+use Shopper\Payment\Facades\Payment;
 use Shopper\Payment\Models\PaymentTransaction;
-use Stripe\StripeClient;
 use Throwable;
 
 final class StripeReturnController
 {
-    /**
-     * Stripe redirects here after confirmPayment. Verify the intent
-     * succeeded, then create the order. Idempotent against retries: the
-     * intent id both gates the order creation lock and deduplicates the
-     * payment transaction.
-     */
+    public const array PAID_STATUSES = ['authorized', 'captured', 'processing'];
+
     public function __invoke(Request $request): RedirectResponse
     {
         $intentId = (string) $request->query('payment_intent', '');
-        $redirectStatus = (string) $request->query('redirect_status', '');
-        $sessionIntentId = session()->get('stripe_intent_id');
 
-        if ($intentId === '' || $intentId !== $sessionIntentId) {
-            return redirect()->route('shop.checkout')
-                ->withErrors(['payment' => __('Invalid payment session.')]);
+        if ($intentId === '') {
+            return $this->fail('payment', __('Invalid payment session.'));
         }
 
-        $lock = Cache::lock('stripe.return.'.$intentId, 15);
-
-        try {
-            $lock->block(10);
-        } catch (LockTimeoutException) {
-            return redirect()->route('shop.checkout')
-                ->withErrors(['payment' => __('Your payment is still being processed. Please wait a moment.')]);
+        if ($orderId = $this->completedOrderId($intentId)) {
+            return redirect()->route('shop.checkout.success', ['order' => $orderId]);
         }
 
-        try {
-            return $this->process($intentId, $redirectStatus);
-        } finally {
-            $lock->release();
-        }
-    }
+        $cart = $this->findCart($intentId);
 
-    private function process(string $intentId, string $redirectStatus): RedirectResponse
-    {
-        $existingTransaction = PaymentTransaction::query()
-            ->where('reference', $intentId)
-            ->first();
-
-        if ($existingTransaction) {
-            session()->forget(['stripe_payment', 'stripe_intent_id', CheckoutSession::KEY]);
-
-            return redirect()->route('shop.checkout.success', ['order' => $existingTransaction->order_id]);
-        }
-
-        $intentStatus = $this->fetchStripeIntent($intentId);
-
-        if (! in_array($intentStatus, ['succeeded', 'requires_capture', 'processing'], true)) {
-            session()->forget(['stripe_payment', 'stripe_intent_id']);
-
-            return redirect()->route('shop.checkout')
-                ->withErrors(['payment' => __('Payment was not completed. Please try again.').' ('.($redirectStatus !== '' ? $redirectStatus : 'unknown').')']);
+        if (! $cart) {
+            return $this->fail('payment', __('Invalid payment session.'));
         }
 
         try {
-            $order = DB::transaction(function () use ($intentId, $intentStatus): Order {
-                $order = resolve(CreateOrder::class)->handle();
-                $this->attachStripeIntentToOrder($order, $intentId, $intentStatus);
-
-                return $order;
-            });
-        } catch (Throwable $e) {
-            report($e);
-
-            return redirect()->route('shop.cart')->withErrors(['order' => __('Order creation failed after payment.')]);
+            $payment = Payment::driver('stripe')->retrievePayment($intentId);
+        } catch (PaymentException $exception) {
+            report($exception);
+            $payment = null;
         }
 
-        session()->forget(['stripe_payment', 'stripe_intent_id', CheckoutSession::KEY]);
-        resolve(CartSessionManager::class)->forget();
+        if (! $payment?->success || ! in_array($payment->status, self::PAID_STATUSES, true)) {
+            return $this->fail('payment', __('Payment was not completed. Please try again.'));
+        }
+
+        $isSessionCart = resolve(CartSessionManager::class)->current()?->is($cart) ?? false;
+
+        try {
+            $order = resolve(CompleteCheckout::class)->handle($cart);
+        } catch (CheckoutException|PriceChangedException|InsufficientStockException|DiscountLimitReachedException|CampaignBudgetExceededException $exception) {
+            $this->release($cart, $payment);
+
+            return redirect()->route('shop.cart')->withErrors(['order' => $exception->getMessage()]);
+        } catch (Throwable $exception) {
+            report($exception);
+            $this->release($cart, $payment);
+
+            return redirect()->route('shop.cart')->withErrors(['order' => __('Order creation failed after payment. Your payment has been released.')]);
+        }
+
+        if ($isSessionCart) {
+            resolve(CartSessionManager::class)->forget();
+        }
 
         return redirect()->route('shop.checkout.success', ['order' => $order->id]);
     }
 
-    private function attachStripeIntentToOrder(Order $order, string $intentId, ?string $status): void
+    /**
+     * A refreshed return URL after success: the order already exists.
+     */
+    private function completedOrderId(string $intentId): ?int
     {
-        $secret = (string) config('shopper.payment.drivers.stripe.credentials.secret_key');
+        $orderId = PaymentTransaction::query()
+            ->where('reference', $intentId)
+            ->whereHas('order', fn ($query) => $query->where('customer_id', Auth::id()))
+            ->value('order_id');
 
-        if ($secret !== '') {
-            try {
-                (new StripeClient($secret))->paymentIntents->update($intentId, [
-                    'metadata' => ['order_id' => $order->id, 'order_number' => $order->number],
-                ]);
-            } catch (Throwable) {
-                // Non-blocking
-            }
-        }
-
-        $order->update([
-            'payment_status' => match ($status) {
-                'succeeded' => PaymentStatus::Paid,
-                'requires_capture' => PaymentStatus::Authorized,
-                default => PaymentStatus::Pending,
-            },
-        ]);
-
-        PaymentTransaction::query()->updateOrCreate(
-            [
-                'order_id' => $order->id,
-                'reference' => $intentId,
-            ],
-            [
-                'payment_method_id' => $order->payment_method_id,
-                'driver' => 'stripe',
-                'type' => match ($status) {
-                    'succeeded' => TransactionType::Capture,
-                    'requires_capture' => TransactionType::Authorize,
-                    default => TransactionType::Initiate,
-                },
-                'amount' => $order->price_amount,
-                'currency_code' => $order->currency_code,
-                'status' => $status === 'succeeded' ? TransactionStatus::Success : TransactionStatus::Pending,
-                'metadata' => ['stripe_status' => $status],
-            ],
-        );
+        return $orderId ? (int) $orderId : null;
     }
 
-    private function fetchStripeIntent(string $intentId): ?string
+    /**
+     * The session cart first; when the return opens in another browser or the
+     * session expired, the customer's open cart pinned to this intent.
+     */
+    private function findCart(string $intentId): ?Cart
     {
-        $secret = (string) config('shopper.payment.drivers.stripe.credentials.secret_key');
+        $cart = resolve(CartSessionManager::class)->current();
 
-        if ($secret === '') {
-            return null;
+        if ($cart && ($cart->payment_session['reference'] ?? null) === $intentId) {
+            return $cart;
         }
+
+        return resolve(CartContract::class)::query()
+            ->where('customer_id', Auth::id())
+            ->whereNull('completed_at')
+            ->where('payment_session->reference', $intentId)
+            ->first();
+    }
+
+    /**
+     * The order could not be created: give the money back and drop the
+     * session so the next attempt opens a fresh intent.
+     */
+    private function release(Cart $cart, PaymentResult $payment): void
+    {
+        $driver = Payment::driver('stripe');
 
         try {
-            return (new StripeClient($secret))
-                ->paymentIntents
-                ->retrieve($intentId)
-                ->status;
-        } catch (Throwable) {
-            return null;
+            match ($payment->status) {
+                'authorized' => $driver->cancelPayment((string) $payment->reference),
+                'captured' => $driver->refundPayment((string) $payment->reference, (int) $payment->amount, 'requested_by_customer'),
+                default => report(new CheckoutException("Payment {$payment->reference} still processing after a failed checkout.")),
+            };
+        } catch (Throwable $exception) {
+            report($exception);
         }
+
+        resolve(CartManager::class)->setPaymentSession($cart, null);
+    }
+
+    private function fail(string $key, string $message): RedirectResponse
+    {
+        return redirect()->route('shop.checkout')->withErrors([$key => $message]);
     }
 }

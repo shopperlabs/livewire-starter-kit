@@ -4,18 +4,21 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Actions\Checkout\CreatePaymentSession;
 use App\Actions\GetCountriesByZone;
 use App\Actions\ZoneSessionManager;
-use App\CheckoutSession;
 use App\DTO\CountryByZoneData;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
+use Shopper\Cart\CartManager;
 use Shopper\Cart\CartSessionManager;
+use Shopper\Cart\Exceptions\MissingPriceException;
+use Shopper\Cart\Models\Cart;
+use Shopper\Cart\Models\CartLine;
 
-class ZoneSelector extends Component
+final class ZoneSelector extends Component
 {
     public bool $showModal = false;
 
@@ -25,7 +28,7 @@ class ZoneSelector extends Component
             $countries = $this->countries;
 
             if ($countries->count() === 1) {
-                $this->autoSelectZone($countries->first());
+                ZoneSessionManager::setSession($countries->first());
             } else {
                 $this->showModal = $countries->isNotEmpty();
             }
@@ -51,23 +54,13 @@ class ZoneSelector extends Component
         }
 
         if ($selectedZone->countryId !== ZoneSessionManager::getSession()?->countryId) {
-            $oldCurrency = current_currency();
-
             ZoneSessionManager::setSession($selectedZone);
-
-            session()->forget(CheckoutSession::KEY);
 
             $cart = resolve(CartSessionManager::class)->current();
 
             if ($cart) {
-                $cart->update([
-                    'zone_id' => $selectedZone->zoneId,
-                    'currency_code' => $selectedZone->currencyCode,
-                ]);
+                $this->moveCart($cart, $selectedZone);
             }
-
-            Cache::forget("home_featured_products_{$oldCurrency}");
-            Cache::forget("home_featured_products_{$selectedZone->currencyCode}");
         }
 
         $this->showModal = false;
@@ -85,8 +78,44 @@ class ZoneSelector extends Component
         return view('livewire.zone-selector');
     }
 
-    private function autoSelectZone(CountryByZoneData $zone): void
+    /**
+     * Carry the cart into the new zone: lines without a price in the new
+     * currency are dropped, the rest is re-priced by the cart manager, which
+     * also resets the delivery choice and the payment session. The payment
+     * method belongs to the old zone, so it is reset too.
+     */
+    private function moveCart(Cart $cart, CountryByZoneData $zone): void
     {
-        ZoneSessionManager::setSession($zone);
+        $manager = resolve(CartManager::class);
+        $cart->load('lines.purchasable');
+
+        $dropped = $cart->lines->filter(
+            fn (CartLine $line): bool => $line->purchasable?->getPrice($zone->currencyCode) === null,
+        );
+
+        foreach ($dropped as $line) {
+            $manager->remove($cart, $line->id);
+        }
+
+        $previousSession = $cart->payment_session;
+        $cart->update(['zone_id' => $zone->zoneId, 'payment_method_id' => null]);
+
+        try {
+            $manager->changeCurrency($cart->refresh(), $zone->currencyCode);
+        } catch (MissingPriceException $exception) {
+            report($exception);
+            $manager->clear($cart);
+        }
+
+        if ($cart->refresh()->payment_session === null) {
+            resolve(CreatePaymentSession::class)->cancel($previousSession);
+        }
+
+        if ($dropped->isNotEmpty()) {
+            $this->dispatch('notify', type: 'error', message: __(':count item(s) not available in :currency were removed from your cart.', [
+                'count' => $dropped->count(),
+                'currency' => $zone->currencyCode,
+            ]));
+        }
     }
 }

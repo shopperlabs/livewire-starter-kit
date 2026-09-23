@@ -1,6 +1,6 @@
 <?php
 
-use Livewire\Volt\Component;
+use Livewire\Component;
 
 new class extends Component {}; ?>
 
@@ -16,5 +16,5 @@ new class extends Component {}; ?>
         </flux:button>
     </flux:modal.trigger>
 
-    <livewire:settings.delete-user-modal />
+    <livewire:pages::settings.delete-user-modal />
 </section>

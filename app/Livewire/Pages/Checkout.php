@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace App\Livewire\Pages;
 
-use App\Actions\Checkout\BuildShippingPackages;
+use App\Actions\Checkout\CompleteCheckout;
+use App\Actions\Checkout\CreatePaymentSession;
 use App\Actions\Checkout\FetchDeliveryRates;
 use App\Actions\Checkout\FetchPaymentMethods;
-use App\Actions\CreateOrder;
 use App\Actions\ZoneSessionManager;
-use App\CheckoutSession;
+use App\Exceptions\CheckoutException;
 use DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException;
 use DanHarrin\LivewireRateLimiting\WithRateLimiting;
 use Illuminate\Contracts\View\View;
@@ -20,15 +20,19 @@ use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Shopper\Cart\CartManager;
 use Shopper\Cart\CartSessionManager;
+use Shopper\Cart\Exceptions\DiscountLimitReachedException;
+use Shopper\Cart\Exceptions\InsufficientStockException;
+use Shopper\Cart\Exceptions\PriceChangedException;
 use Shopper\Cart\Models\Cart as CartModel;
+use Shopper\Cart\Models\CartAddress;
 use Shopper\Cart\Pipelines\CartPipelineContext;
 use Shopper\Core\Enum\AddressType;
+use Shopper\Core\Exceptions\CampaignBudgetExceededException;
 use Shopper\Core\Models\Address;
-use Shopper\Payment\Facades\Payment;
 use Shopper\Payment\Services\PaymentProcessingService;
 use Throwable;
 
-class Checkout extends Component
+final class Checkout extends Component
 {
     use WithRateLimiting;
 
@@ -61,21 +65,25 @@ class Checkout extends Component
     #[Validate('nullable|string|max:20')]
     public string $shippingPhone = '';
 
-    /** @var array<int, array<string, mixed>> */
+    #[Locked]
+    public ?int $shippingCountryId = null;
+
     #[Locked]
     public array $deliveryOptions = [];
 
-    public string|int|null $selectedDeliveryOption = null;
+    #[Locked]
+    public array $deliveryWarnings = [];
+
+    public ?string $selectedDeliveryOption = null;
 
     public ?int $paymentMethodId = null;
 
-    /** @var array<int, array<string, mixed>> */
     #[Locked]
     public array $paymentOptions = [];
 
     public function mount(): void
     {
-        $cart = resolve(CartSessionManager::class)->current();
+        $cart = $this->cart;
 
         if (! $cart || $cart->lines->isEmpty()) {
             $this->redirect(route('shop.cart'), navigate: true);
@@ -83,14 +91,16 @@ class Checkout extends Component
             return;
         }
 
-        $this->restoreFromSession();
+        $this->restoreFromCart($cart);
     }
 
-    /** @return EloquentCollection<int, Address> */
     #[Computed]
     public function savedAddresses(): EloquentCollection
     {
+        $countryIds = $this->cart?->zone?->countries->modelKeys() ?? [];
+
         return auth()->user()->addresses()
+            ->whereIn('country_id', $countryIds)
             ->with('country')
             ->get();
     }
@@ -98,22 +108,18 @@ class Checkout extends Component
     #[Computed]
     public function cart(): ?CartModel
     {
-        return resolve(CartSessionManager::class)->current();
+        return resolve(CartSessionManager::class)->current()?->load('lines.purchasable.media');
     }
 
     #[Computed]
     public function cartContext(): ?CartPipelineContext
     {
-        if (! $this->cart) {
-            return null;
-        }
-
-        return resolve(CartManager::class)->calculate($this->cart);
+        return $this->cart ? resolve(CartManager::class)->totals($this->cart) : null;
     }
 
     public function selectAddress(int $addressId): void
     {
-        $address = auth()->user()->addresses()->findOrFail($addressId);
+        $address = $this->savedAddresses->find($addressId) ?? abort(404);
 
         $this->prefillFromAddress($address);
     }
@@ -121,80 +127,60 @@ class Checkout extends Component
     public function clearAddress(): void
     {
         $this->selectedAddressId = null;
+        $this->shippingCountryId = null;
         $this->reset('shippingFirstName', 'shippingLastName', 'shippingAddress', 'shippingAddressPlus', 'shippingPostalCode', 'shippingCity', 'shippingState', 'shippingPhone');
     }
 
     public function saveShippingAddress(): void
     {
-        $this->validate([
-            'shippingFirstName' => 'required|string|max:255',
-            'shippingLastName' => 'required|string|max:255',
-            'shippingAddress' => 'required|string|max:255',
-            'shippingPostalCode' => 'required|string|max:20',
-            'shippingCity' => 'required|string|max:255',
-        ]);
+        $this->validate();
 
-        $zone = ZoneSessionManager::getSession();
-        $addressData = [
-            'first_name' => $this->shippingFirstName,
-            'last_name' => $this->shippingLastName,
-            'street_address' => $this->shippingAddress,
-            'street_address_plus' => $this->shippingAddressPlus,
-            'postal_code' => $this->shippingPostalCode,
-            'city' => $this->shippingCity,
-            'state' => $this->shippingState,
-            'phone_number' => $this->shippingPhone,
-            'country_id' => $zone?->countryId,
-        ];
+        $cart = $this->cart;
 
-        session()->put(CheckoutSession::SHIPPING_ADDRESS, $addressData);
+        if (! $cart) {
+            $this->redirect(route('shop.cart'), navigate: true);
 
-        if ($this->cart) {
-            resolve(CartManager::class)->addAddress($this->cart, AddressType::Shipping, [
-                'first_name' => $this->shippingFirstName,
-                'last_name' => $this->shippingLastName,
-                'address_1' => $this->shippingAddress,
-                'address_2' => $this->shippingAddressPlus,
-                'postal_code' => $this->shippingPostalCode,
-                'city' => $this->shippingCity,
-                'phone' => $this->shippingPhone,
-                'country_id' => $zone?->countryId,
-            ]);
+            return;
         }
 
-        $packages = resolve(BuildShippingPackages::class)->handle();
-        $this->deliveryOptions = resolve(FetchDeliveryRates::class)->handle($addressData, $packages);
+        $address = [
+            'first_name' => $this->shippingFirstName,
+            'last_name' => $this->shippingLastName,
+            'address_1' => $this->shippingAddress,
+            'address_2' => $this->shippingAddressPlus ?: null,
+            'postal_code' => $this->shippingPostalCode,
+            'city' => $this->shippingCity,
+            'state' => $this->shippingState ?: null,
+            'phone' => $this->shippingPhone ?: null,
+            'country_id' => $this->shippingCountryId ?? ZoneSessionManager::getSession()?->countryId,
+        ];
 
+        $manager = resolve(CartManager::class);
+        $manager->addAddress($cart, AddressType::Shipping, $address);
+        $manager->addAddress($cart, AddressType::Billing, $address);
+        unset($this->cart, $this->cartContext);
+
+        $this->loadDeliveryOptions();
         $this->step = 2;
     }
 
     public function saveShippingOption(): void
     {
         $this->validate([
-            'selectedDeliveryOption' => 'required',
+            'selectedDeliveryOption' => 'required|string',
         ]);
 
-        $selected = collect($this->deliveryOptions)
-            ->first(fn (array $option): bool => $option['service_code'] === $this->selectedDeliveryOption);
+        $option = collect($this->deliveryOptions)->firstWhere('id', $this->selectedDeliveryOption);
+        $cart = $this->cart;
 
-        if (! $selected) {
+        if (! $option || ! $cart) {
             return;
         }
 
-        session()->forget(CheckoutSession::SHIPPING_OPTION);
-
-        session()->push(CheckoutSession::SHIPPING_OPTION, [
-            'id' => $selected['service_code'],
-            'name' => $selected['service_name'],
-            'price' => (int) $selected['amount'],
-            'service_code' => $selected['service_code'],
-            'carrier_code' => $selected['carrier_code'],
-            'currency' => $selected['currency'],
-            'estimated_days' => $selected['estimated_days'],
-        ]);
+        resolve(CartManager::class)->setShippingMethod($cart, $option['id'], (int) $option['amount']);
+        unset($this->cart, $this->cartContext);
 
         $this->loadPaymentMethods();
-
         $this->step = 3;
     }
 
@@ -209,120 +195,65 @@ class Checkout extends Component
         }
 
         $this->validate([
-            'paymentMethodId' => 'required',
+            'paymentMethodId' => 'required|integer',
         ]);
 
-        $selectedMethod = collect($this->paymentOptions)
-            ->first(fn (array $method): bool => $method['id'] === $this->paymentMethodId);
+        $method = collect($this->paymentOptions)->firstWhere('id', $this->paymentMethodId);
+        $cart = $this->cart;
 
-        if (! $selectedMethod) {
+        if (! $method || ! $cart) {
             return;
         }
 
-        session()->forget(CheckoutSession::PAYMENT);
-        session()->push(CheckoutSession::PAYMENT, $selectedMethod);
+        $manager = resolve(CartManager::class);
+        $previousSession = $cart->payment_session;
+        $manager->setPaymentMethod($cart, (int) $method['id']);
+        $manager->setEmail($cart, auth()->user()->email);
 
-        if (($selectedMethod['driver'] ?? null) === 'stripe') {
-            $this->prepareStripePayment();
+        if ($cart->payment_session === null) {
+            resolve(CreatePaymentSession::class)->cancel($previousSession);
+        }
+
+        if (($method['driver'] ?? null) === 'stripe') {
+            // The payment page opens or resumes the intent for the current total.
+            $this->redirectRoute('shop.checkout.stripe');
 
             return;
         }
 
         try {
-            $order = resolve(CreateOrder::class)->handle();
+            $order = resolve(CompleteCheckout::class)->handle($cart);
 
-            $result = resolve(PaymentProcessingService::class)->initiate($order);
+            if ($order->wasRecentlyCreated) {
+                resolve(PaymentProcessingService::class)->initiate($order);
+            }
 
-            session()->forget(CheckoutSession::KEY);
             resolve(CartSessionManager::class)->forget();
 
-            if (! $result->success) {
-                $this->dispatch('notify', type: 'error', message: $result->message ?? __('Payment initiation failed.'));
-            }
-
-            if ($result->redirectUrl) {
-                $this->redirect($result->redirectUrl);
-
-                return;
-            }
-
             $this->redirect(route('shop.checkout.success', ['order' => $order->id]), navigate: true);
+        } catch (CheckoutException|PriceChangedException|InsufficientStockException|DiscountLimitReachedException|CampaignBudgetExceededException $e) {
+            $this->dispatch('notify', type: 'error', message: $e->getMessage());
         } catch (Throwable $e) {
             report($e);
             $this->dispatch('notify', type: 'error', message: __('An error occurred while placing your order. Please try again.'));
         }
     }
 
-    /**
-     * Create the Stripe PaymentIntent without creating an order. The order is
-     * created only after the payment is confirmed (see StripeReturnController).
-     */
-    private function prepareStripePayment(): void
-    {
-        $cart = resolve(CartSessionManager::class)->current();
-
-        if (! $cart || $cart->lines->isEmpty()) {
-            $this->redirect(route('shop.cart'), navigate: true);
-
-            return;
-        }
-
-        $context = resolve(CartManager::class)->calculate($cart);
-        $shippingPrice = (int) data_get(session()->get(CheckoutSession::KEY), 'shipping_option.0.price', 0);
-        $amount = (int) $context->total + $shippingPrice;
-
-        try {
-            $result = Payment::driver('stripe')->initiatePayment(
-                amount: $amount,
-                currency: $cart->currency_code,
-                context: [
-                    'metadata' => [
-                        'cart_id' => $cart->id,
-                        'customer_id' => auth()->id() ?? 0,
-                    ],
-                ],
-            );
-        } catch (Throwable $e) {
-            report($e);
-            $this->dispatch('notify', type: 'error', message: __('Unable to prepare payment. Please try again.'));
-
-            return;
-        }
-
-        if (! $result->success || ! $result->clientSecret) {
-            $this->dispatch('notify', type: 'error', message: $result->message ?? __('Payment preparation failed.'));
-
-            return;
-        }
-
-        $intentId = explode('_secret_', $result->clientSecret)[0] ?? null;
-
-        session()->put('stripe_payment', [
-            'client_secret' => $result->clientSecret,
-            'publishable_key' => $result->data['publishable_key']
-                ?? config('shopper.payment.drivers.stripe.credentials.publishable_key'),
-        ]);
-        session()->put('stripe_intent_id', $intentId);
-
-        $this->redirect(route('shop.checkout.stripe'));
-    }
-
     public function goToStep(int $step): void
     {
-        if ($step < $this->step) {
-            $shippingAddress = session()->get(CheckoutSession::SHIPPING_ADDRESS);
-
-            if ($step === 2 && $shippingAddress) {
-                $packages = resolve(BuildShippingPackages::class)->handle();
-                $this->deliveryOptions = resolve(FetchDeliveryRates::class)->handle($shippingAddress, $packages);
-            }
-
-            if ($step === 3) {
-                $this->loadPaymentMethods();
-            }
-
-            $this->step = $step;
+        if ($step >= $this->step) {
+            return;
         }
+
+        if ($step === 2) {
+            $this->loadDeliveryOptions();
+        }
+
+        if ($step === 3) {
+            $this->loadPaymentMethods();
+        }
+
+        $this->step = $step;
     }
 
     public function render(): View
@@ -331,19 +262,12 @@ class Checkout extends Component
             ->title(__('Checkout'));
     }
 
-    private function restoreFromSession(): void
+    private function restoreFromCart(CartModel $cart): void
     {
-        $checkout = session()->get(CheckoutSession::KEY, []);
+        $shipping = $cart->shippingAddress();
 
-        if ($address = data_get($checkout, 'shipping_address')) {
-            $this->shippingFirstName = $address['first_name'] ?? '';
-            $this->shippingLastName = $address['last_name'] ?? '';
-            $this->shippingAddress = $address['street_address'] ?? '';
-            $this->shippingAddressPlus = $address['street_address_plus'] ?? '';
-            $this->shippingPostalCode = $address['postal_code'] ?? '';
-            $this->shippingCity = $address['city'] ?? '';
-            $this->shippingState = $address['state'] ?? '';
-            $this->shippingPhone = $address['phone_number'] ?? '';
+        if ($shipping) {
+            $this->prefillFromCartAddress($shipping);
         } elseif ($this->savedAddresses->isNotEmpty()) {
             $default = $this->savedAddresses->firstWhere('shipping_default', true)
                 ?? $this->savedAddresses->first();
@@ -351,25 +275,32 @@ class Checkout extends Component
             $this->prefillFromAddress($default);
         }
 
-        $shippingOption = data_get($checkout, 'shipping_option.0');
-        $this->selectedDeliveryOption = $shippingOption['id'] ?? null;
-        $this->paymentMethodId = data_get($checkout, 'payment.0.id');
+        $this->selectedDeliveryOption = $cart->shipping_option_id;
+        $this->paymentMethodId = $cart->payment_method_id ? (int) $cart->payment_method_id : null;
+    }
+
+    private function loadDeliveryOptions(): void
+    {
+        $cart = $this->cart;
+
+        if (! $cart) {
+            return;
+        }
+
+        ['options' => $this->deliveryOptions, 'warnings' => $this->deliveryWarnings] = resolve(FetchDeliveryRates::class)->handle($cart);
     }
 
     private function loadPaymentMethods(): void
     {
-        $countryId = data_get(session()->get(CheckoutSession::SHIPPING_ADDRESS), 'country_id');
+        $zone = $this->cart?->zone;
 
-        if (! $countryId) {
-            return;
-        }
-
-        $this->paymentOptions = resolve(FetchPaymentMethods::class)->handle($countryId);
+        $this->paymentOptions = $zone ? resolve(FetchPaymentMethods::class)->handle($zone) : [];
     }
 
     private function prefillFromAddress(Address $address): void
     {
         $this->selectedAddressId = $address->id;
+        $this->shippingCountryId = $address->country_id;
         $this->shippingFirstName = $address->first_name;
         $this->shippingLastName = $address->last_name;
         $this->shippingAddress = $address->street_address;
@@ -378,5 +309,18 @@ class Checkout extends Component
         $this->shippingCity = $address->city;
         $this->shippingState = $address->state ?? '';
         $this->shippingPhone = $address->phone_number ?? '';
+    }
+
+    private function prefillFromCartAddress(CartAddress $address): void
+    {
+        $this->shippingCountryId = $address->country_id;
+        $this->shippingFirstName = $address->first_name ?? '';
+        $this->shippingLastName = $address->last_name ?? '';
+        $this->shippingAddress = $address->address_1 ?? '';
+        $this->shippingAddressPlus = $address->address_2 ?? '';
+        $this->shippingPostalCode = $address->postal_code ?? '';
+        $this->shippingCity = $address->city ?? '';
+        $this->shippingState = $address->state ?? '';
+        $this->shippingPhone = $address->phone ?? '';
     }
 }

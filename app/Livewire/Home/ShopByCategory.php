@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
-class ShopByCategory extends Component
+final class ShopByCategory extends Component
 {
     public const int CACHE_TTL = 7200;
 

@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 use Illuminate\Pagination\LengthAwarePaginator;
 use Livewire\Attributes\Url;
-use Livewire\Volt\Component;
+use Livewire\Component;
 use Livewire\WithPagination;
 use Shopper\Core\Enum\OrderStatus;
 use Shopper\Core\Enum\ShippingStatus;
@@ -72,7 +74,7 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
                 wire:click="$set('tab', 'all')"
                 @class([
                     'rounded-md px-3 py-1.5 text-sm font-medium transition',
-                    'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' => $tab === 'all',
+                    'bg-accent text-accent-foreground' => $tab === 'all',
                     'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white' => $tab !== 'all',
                 ])
             >
@@ -83,7 +85,7 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
                 wire:click="$set('tab', 'not-shipped')"
                 @class([
                     'rounded-md px-3 py-1.5 text-sm font-medium transition',
-                    'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' => $tab === 'not-shipped',
+                    'bg-accent text-accent-foreground' => $tab === 'not-shipped',
                     'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white' => $tab !== 'not-shipped',
                 ])
             >
@@ -94,7 +96,7 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
                 wire:click="$set('tab', 'cancelled')"
                 @class([
                     'rounded-md px-3 py-1.5 text-sm font-medium transition',
-                    'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' => $tab === 'cancelled',
+                    'bg-accent text-accent-foreground' => $tab === 'cancelled',
                     'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white' => $tab !== 'cancelled',
                 ])
             >
@@ -105,7 +107,7 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
 
     @if ($orders->isEmpty())
         <div class="mt-12 flex flex-col items-center justify-center text-center">
-            <x-flux::icon.shopping-bag variant="outline" class="size-12 text-zinc-300 dark:text-zinc-600" />
+            <flux:icon.shopping-bag variant="outline" class="size-12 text-zinc-300 dark:text-zinc-600" />
             <h3 class="mt-4 text-sm font-medium text-zinc-900 dark:text-white">{{ __('No orders found') }}</h3>
             <p class="mt-1 text-sm text-zinc-500">{{ __('Your orders will appear here once you make a purchase.') }}</p>
             <div class="mt-6">
@@ -117,9 +119,9 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
     @else
         <div class="mt-6 space-y-6">
             @foreach ($orders as $order)
-                <div class="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
+                <div wire:key="order-{{ $order->id }}" class="overflow-hidden rounded-xl border border-zinc-200 dark:border-zinc-700">
                     <div class="flex flex-wrap items-start justify-between gap-4 border-b border-zinc-200 bg-zinc-50 px-5 py-4 dark:border-zinc-700 dark:bg-zinc-800/50">
-                        <div class="flex flex-wrap items-center gap-8 text-sm">
+                        <dl class="flex flex-wrap items-center gap-8 text-sm">
                             <div>
                                 <dt class="text-xs text-zinc-500">{{ __('Order placed') }}</dt>
                                 <dd class="mt-0.5 font-medium text-zinc-900 dark:text-white">
@@ -139,13 +141,13 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
                                         <span>
                                             {{ $order->shippingAddress->street_address }}
                                         </span>
-                                        <span class="text-xs font-normal text-zinc-700">
+                                        <span class="text-xs font-normal text-zinc-700 dark:text-zinc-300">
                                             @if ($order->shippingAddress->postal_code){{ $order->shippingAddress->postal_code }} @endif{{ $order->shippingAddress->city }}@if ($order->shippingAddress->country_name), {{ $order->shippingAddress->country_name }}@endif
                                         </span>
                                     </dd>
                                 </div>
                             @endif
-                        </div>
+                        </dl>
                         <div class="flex flex-col items-end gap-1.5 text-sm">
                             <span class="font-medium text-zinc-900 dark:text-white">
                                 {{ __('Order #:number', ['number' => $order->number]) }}
@@ -171,7 +173,7 @@ new #[\Livewire\Attributes\Layout('layouts.account')] class extends Component {
 
                         <div class="mt-4 space-y-4">
                             @foreach ($order->items as $item)
-                                <x-order.item :$item :currency-code="$order->currency_code" />
+                                <x-order.item :$item :currency-code="$order->currency_code" wire:key="order-item-{{ $item->id }}" />
                             @endforeach
                         </div>
                     </div>

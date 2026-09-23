@@ -9,7 +9,7 @@ use Livewire\Attributes\On;
 use Livewire\Component;
 use Shopper\Cart\CartSessionManager;
 
-class CartCount extends Component
+final class CartCount extends Component
 {
     public int $count = 0;
 

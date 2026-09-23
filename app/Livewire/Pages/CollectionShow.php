@@ -13,7 +13,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Shopper\Core\Models\Collection;
 
-class CollectionShow extends Component
+final class CollectionShow extends Component
 {
     use WithPagination;
 
@@ -35,7 +35,7 @@ class CollectionShow extends Component
     public function products(): LengthAwarePaginator
     {
         $currencyCode = current_currency();
-        $priceConstraint = fn ($q) => $q->whereRelation('currency', 'code', $currencyCode);
+        $priceConstraint = fn ($q) => $q->whereRelation('currency', 'code', $currencyCode)->with('currency');
 
         return $this->collection->productsQuery()
             ->scopes('publish')

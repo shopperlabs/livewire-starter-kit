@@ -34,7 +34,7 @@
 
         <span class="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-white transition-all group-hover:gap-2.5">
             {{ __('Shop now') }}
-            <x-flux::icon.arrow-right variant="micro" class="size-4" aria-hidden="true" />
+            <flux:icon.arrow-right variant="micro" class="size-4" aria-hidden="true" />
         </span>
     </div>
 </x-link>

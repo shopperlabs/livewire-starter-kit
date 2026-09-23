@@ -58,6 +58,8 @@ class AppServiceProvider extends ServiceProvider
      */
     protected function configureBladeNamespaces(): void
     {
+        $this->loadViewsFrom(resource_path('views/pages'), 'pages');
+
         Blade::anonymousComponentNamespace('layouts', 'layouts');
         Blade::anonymousComponentNamespace('pages', 'pages');
     }

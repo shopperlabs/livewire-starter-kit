@@ -2,7 +2,7 @@
 
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
-use Livewire\Volt\Component;
+use Livewire\Component;
 
 new #[Layout('layouts.account'), Title('Appearance settings')] class extends Component {
     //
