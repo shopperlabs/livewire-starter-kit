@@ -4,7 +4,7 @@ version: 2.0.0
 author: shopperlabs
 url: 'https://github.com/shopperlabs/livewire-starter-kit'
 preview: 'https://livewire-demo.shopperphp.com'
-docs: ''
+docs: 'https://github.com/shopperlabs/livewire-starter-kit/blob/3.x/README.md'
 stack: [livewire, alpinejs, blade]
 
 shopper: ^3.0
